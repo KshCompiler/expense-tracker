@@ -1,7 +1,7 @@
 ---
 name: feature-generate
 description: >
-  Use this skill whenever the user runs `/feature-generate` or asks to create a feature specification, spec document, or wants to plan a new website feature with a Git branch. Triggers on: "/spec", "create a spec", "write a feature spec", "spec out this feature", "create a specification for", "set up a feature branch and spec", "document this feature". Always use this skill when the user wants to define requirements, user stories, or acceptance criteria for a new feature and prepare the codebase for implementation.
+  Use this skill whenever the user runs `/feature-generate` or asks to create a feature specification, spec document,Triggers on: "/spec", "create a spec", "write a feature spec", "spec out this feature", "create a specification for", "set up a feature branch and spec", "document this feature". Always use this skill when the user wants to define requirements, user stories, or acceptance criteria for a new feature and prepare the codebase for implementation.
 ---
 
 # /spec — Feature Specification + Git Setup
