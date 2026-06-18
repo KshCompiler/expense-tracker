@@ -36,6 +36,7 @@ git status
 
 ```bash
 git checkout main
+git pull origin main
 
 ```
 
