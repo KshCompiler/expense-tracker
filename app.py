@@ -1,9 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from database.db import get_db, init_db, close_db, create_user, get_user_by_email
 import os
+import re
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-change-in-production'  # Needed for flash messages
+
+# Email validation regex
+EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
 # Initialize database
 init_db()
@@ -42,6 +46,16 @@ def register():
             flash("Passwords do not match!", "error")
             return render_template("register.html")
 
+        # Email format validation
+        if not EMAIL_REGEX.match(email):
+            flash("Please enter a valid email address!", "error")
+            return render_template("register.html")
+
+        # Password length validation
+        if len(password) < 8:
+            flash("Password must be at least 8 characters long!", "error")
+            return render_template("register.html")
+
         # Check if user already exists
         existing_user = get_user_by_email(email)
 
@@ -52,7 +66,7 @@ def register():
         # Insert new user
         try:
             create_user(full_name, email, password)
-            flash("Account created successfully! Welcome to Spendly!", "success")
+            flash("Account created successfully", "success")
             return redirect(url_for("landing"))
         except Exception as e:
             flash("An error occurred. Please try again.", "error")
