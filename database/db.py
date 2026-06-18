@@ -18,10 +18,11 @@ def init_db():
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS users (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            name          TEXT    NOT NULL,
+            full_name     TEXT    NOT NULL,
             email         TEXT    UNIQUE NOT NULL,
             password_hash TEXT    NOT NULL,
-            created_at    TEXT    DEFAULT (datetime('now'))
+            created_at    TEXT    DEFAULT (datetime('now')),
+            updated_at    TEXT    DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS expenses (
@@ -38,11 +39,11 @@ def init_db():
     conn.close()
 
 
-def create_user(name, email, password):
+def create_user(full_name, email, password):
     conn = get_db()
     cursor = conn.execute(
-        "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-        (name, email, generate_password_hash(password)),
+        "INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)",
+        (full_name, email, generate_password_hash(password)),
     )
     conn.commit()
     user_id = cursor.lastrowid

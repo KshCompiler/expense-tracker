@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-from database.db import get_db, init_db, close_db
+from database.db import get_db, init_db, close_db, create_user, get_user_by_email
 import os
 
 app = Flask(__name__)
@@ -27,20 +27,23 @@ def landing():
 def register():
     if request.method == "POST":
         # Get form data
-        name = request.form.get("name")
+        full_name = request.form.get("full_name")
         email = request.form.get("email")
         password = request.form.get("password")
+        confirm_password = request.form.get("confirm_password")
 
         # Basic validation
-        if not name or not email or not password:
+        if not full_name or not email or not password or not confirm_password:
             flash("All fields are required!", "error")
             return render_template("register.html")
 
+        # Check if passwords match
+        if password != confirm_password:
+            flash("Passwords do not match!", "error")
+            return render_template("register.html")
+
         # Check if user already exists
-        db = get_db()
-        existing_user = db.execute(
-            "SELECT id FROM users WHERE email = ?", (email,)
-        ).fetchone()
+        existing_user = get_user_by_email(email)
 
         if existing_user:
             flash("An account with this email already exists!", "error")
@@ -48,13 +51,9 @@ def register():
 
         # Insert new user
         try:
-            db.execute(
-                "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-                (name, email, password)
-            )
-            db.commit()
+            create_user(full_name, email, password)
             flash("Account created successfully! Welcome to Spendly!", "success")
-            return redirect(url_for("login"))
+            return redirect(url_for("landing"))
         except Exception as e:
             flash("An error occurred. Please try again.", "error")
             return render_template("register.html")
