@@ -60,6 +60,15 @@ def get_user_by_email(email):
     return user
 
 
+def get_user_by_id(user_id):
+    conn = get_db()
+    user = conn.execute(
+        "SELECT * FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    conn.close()
+    return user
+
+
 def seed_db():
     conn = get_db()
 
@@ -69,7 +78,7 @@ def seed_db():
         return
 
     cursor = conn.execute(
-        "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+        "INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)",
         ("Demo User", "demo@spendly.com", generate_password_hash("demo123")),
     )
     user_id = cursor.lastrowid
@@ -95,3 +104,141 @@ def seed_db():
 def close_db(e=None):
     """Dummy function to maintain compatibility with app.py"""
     pass
+
+
+def get_user_expenses_this_month(user_id):
+    """Get all expenses for a user for the current month"""
+    conn = get_db()
+    try:
+        # Get current year-month
+        from datetime import datetime
+        current_month = datetime.now().strftime("%Y-%m")
+
+        expenses = conn.execute("""
+            SELECT * FROM expenses
+            WHERE user_id = ? AND date LIKE ?
+            ORDER BY date DESC
+        """, (user_id, f"{current_month}%")).fetchall()
+        return expenses
+    finally:
+        conn.close()
+
+
+def get_user_income_this_month(user_id):
+    """Get all income for a user for the current month"""
+    # For now, returning empty list as income tracking is not implemented
+    # This would be implemented when income tracking is added
+    conn = get_db()
+    try:
+        return []
+    finally:
+        conn.close()
+
+
+def get_expenses_by_category(user_id):
+    """Get expenses grouped by category for the current month"""
+    conn = get_db()
+    try:
+        from datetime import datetime
+        current_month = datetime.now().strftime("%Y-%m")
+
+        categories = conn.execute("""
+            SELECT category, SUM(amount) as total
+            FROM expenses
+            WHERE user_id = ? AND date LIKE ?
+            GROUP BY category
+        """, (user_id, f"{current_month}%")).fetchall()
+        return categories
+    finally:
+        conn.close()
+
+
+def get_recent_transactions(user_id, limit=5):
+    """Get recent transactions for a user"""
+    conn = get_db()
+    try:
+        transactions = conn.execute("""
+            SELECT * FROM expenses
+            WHERE user_id = ?
+            ORDER BY date DESC, created_at DESC
+            LIMIT ?
+        """, (user_id, limit)).fetchall()
+        return transactions
+    finally:
+        conn.close()
+
+
+def get_all_user_transactions(user_id):
+    """Get all transactions for a user"""
+    conn = get_db()
+    try:
+        transactions = conn.execute("""
+            SELECT * FROM expenses
+            WHERE user_id = ?
+            ORDER BY date DESC, created_at DESC
+        """, (user_id,)).fetchall()
+        return transactions
+    finally:
+        conn.close()
+
+
+def add_expense(user_id, amount, category, date, description):
+    """Add a new expense for a user"""
+    conn = get_db()
+    try:
+        conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+
+def get_expense_by_id(expense_id):
+    """Get an expense by its ID"""
+    conn = get_db()
+    try:
+        expense = conn.execute(
+            "SELECT * FROM expenses WHERE id = ?", (expense_id,)
+        ).fetchone()
+        return expense
+    finally:
+        conn.close()
+
+
+def update_expense(expense_id, amount, category, date, description):
+    """Update an existing expense"""
+    conn = get_db()
+    try:
+        conn.execute(
+            """UPDATE expenses
+               SET amount = ?, category = ?, date = ?, description = ?
+               WHERE id = ?""",
+            (amount, category, date, description, expense_id)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+
+def delete_expense_helper(expense_id):
+    """Delete an expense by its ID"""
+    conn = get_db()
+    try:
+        conn.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()

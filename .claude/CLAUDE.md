@@ -40,6 +40,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   pytest tests/test_specific.py
   ```
 
+  ### agents
+  always run builtin in agent for building plan
+  always run builit in subagent for reading files
+  always run required built in agent for the task
+
 ### Database Management
 - The database is initialized automatically when the app starts via `init_db()` in `app.py`.
 - To manually initialize or recreate the database, you can run:
