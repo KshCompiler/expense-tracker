@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from database.db import get_db, init_db, close_db, create_user, get_user_by_email
+from werkzeug.security import check_password_hash
 import os
 import re
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-change-in-production'  # Needed for flash messages
@@ -11,6 +13,9 @@ EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
 # Initialize database
 init_db()
+# Seed database with demo data
+from database.db import seed_db
+seed_db()
 
 # Close database connection after each request
 @app.teardown_appcontext
@@ -76,9 +81,84 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/login")
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not email or not password:
+            flash("Email and password are required!", "error")
+            return render_template("login.html")
+
+        # Get user by email
+        user = get_user_by_email(email)
+
+        if user and check_password_hash(user['password_hash'], password):
+            # Store user info in session
+            session['user_id'] = user['id']
+            session['user_email'] = user['email']
+            session['user_full_name'] = user['full_name']
+
+            flash("Login successful! Redirecting to your dashboard...", "success")
+            return redirect(url_for("dashboard"))
+        else:
+            flash("Invalid email or password!", "error")
+            return render_template("login.html")
+
+    # GET request - show login form
     return render_template("login.html")
+
+
+@app.route("/dashboard")
+def dashboard():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to access your dashboard.", "error")
+        return redirect(url_for("login"))
+
+    # Get user data
+    user_id = session['user_id']
+
+    # Get user info
+    from database.db import get_user_by_id
+    user = get_user_by_id(user_id)
+
+    # Get today's date and time
+    now = datetime.now()
+    today_date = now.strftime("%B %d, %Y")
+    current_time = now.strftime("%I:%M %p")
+
+    # Get dashboard data using helper functions
+    from database.db import get_user_expenses_this_month, get_user_income_this_month, get_expenses_by_category, get_recent_transactions
+    expenses = get_user_expenses_this_month(user_id)
+    income = get_user_income_this_month(user_id)
+    categories = get_expenses_by_category(user_id)
+    recent_transactions = get_recent_transactions(user_id)
+
+    # Calculate summary statistics
+    total_expenses = sum(expense['amount'] for expense in expenses) if expenses else 0
+    total_income = sum(income_item['amount'] for income_item in income) if income else 0
+    remaining_balance = total_income - total_expenses
+    transaction_count = len(expenses)
+
+    # Prepare data for template
+    dashboard_data = {
+        'user': user,
+        'today_date': today_date,
+        'current_time': current_time,
+        'total_expenses': total_expenses,
+        'total_income': total_income,
+        'remaining_balance': remaining_balance,
+        'transaction_count': transaction_count,
+        'categories': categories,
+        'recent_transactions': recent_transactions,
+        'has_transactions': transaction_count > 0
+    }
+
+    return render_template("dashboard.html", **dashboard_data)
 
 
 # ------------------------------------------------------------------ #
@@ -87,27 +167,164 @@ def login():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    # Clear session data
+    session.clear()
+    flash("You have been logged out successfully.", "info")
+    return redirect(url_for("landing"))
+
+
+
+
+
+
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
+def edit_expense(id):
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to edit expenses.", "error")
+        return redirect(url_for("login"))
+
+    # Get the expense to verify it belongs to the user
+    from database.db import get_expense_by_id
+    expense = get_expense_by_id(id)
+
+    if not expense or expense['user_id'] != session['user_id']:
+        flash("Expense not found or you don't have permission to edit it.", "error")
+        return redirect(url_for("view_transactions"))
+
+    if request.method == "POST":
+        # Get form data
+        amount = request.form.get("amount")
+        category = request.form.get("category")
+        date = request.form.get("date")
+        description = request.form.get("description")
+
+        # Basic validation
+        if not amount or not category or not date:
+            flash("Amount, category, and date are required!", "error")
+            return render_template("edit_expense.html", expense=expense)
+
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                flash("Amount must be greater than zero!", "error")
+                return render_template("edit_expense.html", expense=expense)
+        except ValueError:
+            flash("Please enter a valid amount!", "error")
+            return render_template("edit_expense.html", expense=expense)
+
+        # Update expense using helper function
+        from database.db import update_expense
+        try:
+            update_expense(id, amount, category, date, description)
+            flash("Expense updated successfully!", "success")
+            return redirect(url_for("view_transactions"))
+        except Exception as e:
+            flash("An error occurred while updating the expense. Please try again.", "error")
+            return render_template("edit_expense.html", expense=expense)
+
+    # GET request - show edit expense form
+    return render_template("edit_expense.html", expense=expense)
+
+
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
+def delete_expense(id):
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to delete expenses.", "error")
+        return redirect(url_for("login"))
+
+    # Get the expense to verify it belongs to the user
+    from database.db import get_expense_by_id
+    expense = get_expense_by_id(id)
+
+    if not expense or expense['user_id'] != session['user_id']:
+        flash("Expense not found or you don't have permission to delete it.", "error")
+        return redirect(url_for("view_transactions"))
+
+    # Delete expense using helper function
+    from database.db import delete_expense_helper
+    try:
+        delete_expense_helper(id)
+        flash("Expense deleted successfully!", "success")
+    except Exception as e:
+        flash("An error occurred while deleting the expense. Please try again.", "error")
+
+    return redirect(url_for("view_transactions"))
+
+
+@app.route("/expenses/add", methods=["GET", "POST"])
+def add_expense():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to add expenses.", "error")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        # Get form data
+        amount = request.form.get("amount")
+        category = request.form.get("category")
+        date = request.form.get("date")
+        description = request.form.get("description")
+
+        # Basic validation
+        if not amount or not category or not date:
+            flash("Amount, category, and date are required!", "error")
+            return render_template("add_expense.html")
+
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                flash("Amount must be greater than zero!", "error")
+                return render_template("add_expense.html")
+        except ValueError:
+            flash("Please enter a valid amount!", "error")
+            return render_template("add_expense.html")
+
+        # Add expense using helper function
+        from database.db import add_expense
+        try:
+            add_expense(session['user_id'], amount, category, date, description)
+            flash("Expense added successfully!", "success")
+            return redirect(url_for("dashboard"))
+        except Exception as e:
+            flash("An error occurred while adding the expense. Please try again.", "error")
+            return render_template("add_expense.html")
+
+    # GET request - show add expense form
+    return render_template("add_expense.html")
+
+
+@app.route("/view_transactions")
+def view_transactions():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to view transactions.", "error")
+        return redirect(url_for("login"))
+
+    # Get user data
+    user_id = session['user_id']
+
+    # Get all transactions using helper function
+    from database.db import get_all_user_transactions
+    transactions = get_all_user_transactions(user_id)
+
+    return render_template("view_transactions.html", transactions=transactions)
 
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash("Please log in to view your profile.", "error")
+        return redirect(url_for("login"))
 
+    # Get user data using helper function
+    from database.db import get_user_by_id
+    user_id = session['user_id']
+    user = get_user_by_id(user_id)
 
-@app.route("/expenses/add")
-def add_expense():
-    return "Add expense — coming in Step 7"
-
-
-@app.route("/expenses/<int:id>/edit")
-def edit_expense(id):
-    return "Edit expense — coming in Step 8"
-
-
-@app.route("/expenses/<int:id>/delete")
-def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+    return render_template("profile.html", user=user)
 
 
 if __name__ == "__main__":
