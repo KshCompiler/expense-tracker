@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Spendly{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Welcome Section -->
+    <section class="welcome-section">
+        <h1 class="welcome-title">Welcome back, {{ user.full_name }}!</h1>
+        <div class="welcome-info">
+            <div class="date">
+                <span class="icon">[Date]</span>
+                <span>{{ today_date }}</span>
+            </div>
+            <div class="time">
+                <span class="icon">[Time]</span>
+                <span>{{ current_time }}</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Overview Cards -->
+    <div class="overview-cards">
+        <!-- Income Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Monthly Income</div>
+                <div class="card-subtitle">Total earned this month</div>
+            </div>
+            <div class="card-body">
+                <span class="amount positive">${{ total_income }}</span>
+            </div>
+        </div>
+
+        <!-- Expenses Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Monthly Expenses</div>
+                <div class="card-subtitle">Total spent this month</div>
+            </div>
+            <div class="card-body">
+                <span class="amount negative">${{ total_expenses }}</span>
+            </div>
+        </div>
+
+        <!-- Remaining Balance Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Remaining Balance</div>
+                <div class="card-subtitle">Income minus expenses</div>
+            </div>
+            <div class="card-body">
+                <span class="amount {% if remaining_balance >= 0 %}positive{% else %}negative{% endif %}">
+                    ${{ remaining_balance }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Transaction Count Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Transactions</div>
+                <div class="card-subtitle">Expenses this month</div>
+            </div>
+            <div class="card-body">
+                <span class="amount">{{ transaction_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Section -->
+    <section class="analytics-section">
+        <h2 class="section-title">
+            <span class="icon">[Chart]</span>
+            Expense Breakdown
+        </h2>
+        <div class="analytics-grid">
+            <!-- Category Breakdown -->
+            <div class="category-breakdown">
+                <h3 class="breakdown-title">By Category</h3>
+                <div class="breakdown-list">
+                    {% for category in categories %}
+                    <div class="breakdown-item">
+                        <span class="category-name">{{ category.category }}</span>
+                        <div>
+                            <span class="category-amount">${{ category.total }}</span>
+                            {% if total_expenses > 0 %}
+                            <span class="category-percentage">
+                                {{ ((category.total / total_expenses) * 100)|round(1) }}%
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if categories|length == 0 %}
+                    <div class="breakdown-item">
+                        <span class="category-name">No expenses yet</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Chart Placeholder (for future enhancement) -->
+            <div class="chart-container">
+                <h3 class="chart-title">
+                    <span class="icon">[Trend]</span>
+                    Monthly Trend
+                </h3>
+                <div class="chart-placeholder">
+                    <div class="chart-icon">[Chart]</div>
+                    <p>Chart visualization coming soon</p>
+                    <p class="no-chart-data">Expense trends will appear here</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Transactions -->
+    <section class="transactions-section">
+        <h2 class="section-title">
+            <span class="icon">[List]</span>
+            Recent Transactions
+        </h2>
+        {% if recent_transactions %}
+        <table class="transactions-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in recent_transactions %}
+                <tr>
+                    <td>{{ transaction.date }}</td>
+                    <td>
+                        <span class="category-tag {% if transaction.category == 'Food' %}food{% elif transaction.category == 'Transport' %}transport{% elif transaction.category == 'Shopping' %}shopping{% elif transaction.category == 'Bills' %}bills{% elif transaction.category == 'Entertainment' %}entertainment{% elif transaction.category == 'Health' %}health{% elif transaction.category == 'Education' %}education{% else %}other{% endif %}">
+                            {{ transaction.category }}
+                        </span>
+                    </td>
+                    <td>{{ transaction.description or 'No description' }}</td>
+                    <td class="amount negative">${{ transaction.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">[No Mail]</div>
+            <p>No transactions yet. Start by adding your first expense!</p>
+            <a href="{{ url_for('add_expense') }}" class="action-btn">
+                <div class="action-icon">+</div>
+                <div class="action-text">Add Expense</div>
+            </a>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions">
+        <h2 class="section-title">
+            <span class="icon">[Action]</span>
+            Quick Actions
+        </h2>
+        <div class="actions-grid">
+            <a href="{{ url_for('add_expense') }}" class="action-btn">
+                <div class="action-icon">+</div>
+                <div class="action-text">Add Expense</div>
+            </a>
+            <a href="{{ url_for('view_transactions') }}" class="action-btn">
+                <div class="action-icon">[List]</div>
+                <div class="action-text">View All</div>
+            </a>
+            <a href="{{ url_for('profile') }}" class="action-btn">
+                <div class="action-icon">[Person]</div>
+                <div class="action-text">Profile</div>
+            </a>
+            <a href="{{ url_for('logout') }}" class="action-btn">
+                <div class="action-icon">[Door]</div>
+                <div class="action-text">Logout</div>
+            </a>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% endblock %}
