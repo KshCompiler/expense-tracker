@@ -150,3 +150,4 @@ save the file to
 - Never assume requirements — ask when information is missing.
 - Produce a complete, implementation-ready document.
 - Follow all project conventions from `CLAUDE.md`.
+
