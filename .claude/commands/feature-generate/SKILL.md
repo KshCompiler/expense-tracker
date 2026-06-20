@@ -1,153 +1,131 @@
 ---
-name: feature-generate
-description: >
-  Use this skill whenever the user runs `/feature-generate` or asks to create a feature specification, spec document,Triggers on: "/spec", "create a spec", "write a feature spec", "spec out this feature", "create a specification for", "set up a feature branch and spec", "document this feature". Always use this skill when the user wants to define requirements, user stories, or acceptance criteria for a new feature and prepare the codebase for implementation.
+description: Create a spec file and feature branch for the next Spendly step
+argument-hint: "Step number and feature name e.g. 2 registration"
+allowed-tools: Read, Write, Glob, Bash(git:*)
 ---
 
-# /spec — Feature Specification + Git Setup
+You are a senior developer spinning up a new feature for the
+Spendly expense tracker. Always follow the rules in CLAUDE.md.
 
-A slash command that creates a complete, implementation-ready feature specification document and prepares the Git workflow (clean working tree → sync main → create feature branch).
+User input: $ARGUMENTS
 
----
+## Step 1 — Check working directory is clean
+Run `git status` and check for uncommitted, unstaged, or
+untracked files. If any exist, stop immediately and tell
+the user to commit or stash changes before proceeding.
+DO NOT CONTINUE until the working directory is clean.
 
-## Step 1: Read Project Context
+## Step 2 — Parse the arguments
+From $ARGUMENTS extract:
 
-1. Read `CLAUDE.md` first. Follow **all** instructions, conventions, and constraints defined in it.
-2. Scan additional files only as needed to understand: project structure, existing features, architecture, naming conventions, and dependencies.
+1. `step_number` — zero-padded to 2 digits: 2 → 02, 11 → 11
 
----
+2. `feature_title` — human readable title in Title Case
+   - Example: "Registration" or "Login and Logout"
 
-## Step 2: Verify Git State
+3. `feature_slug` — git and file safe slug
+   - Lowercase, kebab-case
+   - Only a-z, 0-9 and -
+   - Maximum 40 characters
+   - Example: registration, login-logout
 
+4. `branch_name` — format: `feature/<feature_slug>`
+   - Example: `feature/registration`
+
+If you cannot infer these from $ARGUMENTS, ask the user
+to clarify before proceeding.
+
+## Step 3 — Check branch name is not taken
+Run `git branch` to list existing branches.
+If `branch_name` is already taken, append a number:
+`feature/registration-01`, `feature/registration-02` etc.
+
+## Step 4 — Switch to main and pull latest
 Run:
-```bash
-git status
 ```
-
-- If the working tree is **clean**: proceed.
-- If there are **uncommitted changes**:
-  - Display the changes to the user.
-  - Ask whether to **commit**, **stash**, or **discard** them.
-  - **Do not switch branches** until the working tree is clean.
-
----
-
-## Step 3: Sync Main Branch
-
-```bash
 git checkout main
 git pull origin main
-
 ```
 
----
-
-## Step 4: Gather Feature Information
-
-Ask the user for the following (all in one message, not one at a time):
-
-1. Feature number or ticket ID
-2. Feature name
-3. What functionality should be added
-4. Problem being solved
-5. Expected user behavior
-6. UI/UX requirements
-7. Technical constraints or dependencies
-8. Acceptance criteria
-
-Do not proceed to branch creation or spec writing until you have enough information. Ask follow-up questions if anything is ambiguous or missing.
-
----
-
-## Step 5: Create Feature Branch
-
-Generate a branch name from the feature name in **kebab-case**:
-
-```bash
-git checkout -b feature/<feature-name>
+## Step 5 — Create and switch to the feature branch
+Run:
+```
+git checkout -b <branch_name>
 ```
 
-Example:
-```bash
-git checkout -b feature/user-profile-page
-```
+## Step 6 — Research the codebase
+Read these files before writing the spec:
+- `CLAUDE.md` — roadmap, conventions, schema
+- `app.py` — existing routes and structure
+- `database/db.py` — existing schema and functions
+- All files in `.claude/specs/` — avoid duplicating existing specs
+
+Check `CLAUDE.md` to confirm the requested step is not already
+marked complete. If it is, warn the user and stop.
+
+## Step 7 — Write the spec
+Generate a spec document with this exact structure:
 
 ---
-
-## Step 6: Create Specification Document
-
-Write a complete spec using this structure:
-
-```markdown
-# Feature Specification
-
-**Feature Number:** <id>
-**Feature Name:** <name>
-
----
+# Spec: <feature_title>
 
 ## Overview
-Brief description of the feature.
+One paragraph describing what this feature does and why
+it exists at this stage of the Spendly roadmap.
 
-## Problem Statement
-What problem does this feature solve?
+## Depends on
+Which previous steps this feature requires to be complete.
 
-## Goals
-- Goal 1
-- Goal 2
+## Routes
+Every new route needed:
+- `METHOD /path` — description — access level (public/logged-in)
 
-## User Stories
-- As a [user type], I want [action] so that [outcome].
+If no new routes: state "No new routes".
 
-## Functional Requirements
-1. Requirement 1
-2. Requirement 2
+## Database changes
+Any new tables, columns, or constraints needed.
+Always verify against `database/db.py` before writing this.
+If none: state "No database changes".
 
-## Non-Functional Requirements
-- Performance
-- Security
-- Accessibility
-- Browser/device support
+## Templates
+- **Create:** list new templates with their path
+- **Modify:** list existing templates and what changes
 
-## UI/UX Requirements
-Screens, components, interactions, validations.
+## Files to change
+Every file that will be modified.
 
-## Technical Considerations
-- Database changes
-- API changes
-- State management
-- Dependencies
-- Edge cases
+## Files to create
+Every new file that will be created.
 
-## Acceptance Criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
+## New dependencies
+Any new pip packages. If none: state "No new dependencies".
 
-## Out of Scope
-Items explicitly not included in this implementation.
+## Rules for implementation
+Specific constraints Claude must follow. Always include:
+- No SQLAlchemy or ORMs
+- Parameterised queries only
+- Passwords hashed with werkzeug
+- Use CSS variables — never hardcode hex values
+- All templates extend `base.html`
 
-## Implementation Notes
-Additional developer notes and considerations.
-```
-
+## Definition of done
+A specific testable checklist. Each item must be
+something that can be verified by running the app.
 ---
 
-## Step 7: Save the Specification
-check if specs folder exist or not inside .claude folder
-if exist continue
-if not make one then continue
+## Step 8 — Save the spec
+Save to: `.claude/specs/<step_number>-<feature_slug>.md`
 
+## Step 9 — Report to the user
+Print a short summary in this exact format:
+```
+Branch:    <branch_name>
+Spec file: .claude/specs/<step_number>-<feature_slug>.md
+Title:     <feature_title>
+```
 
-save the file to
-.claude/specs/<step_number>-<feature_slug>.md
+Then tell the user:
+"Review the spec at `.claude/specs/<step_number>-<feature_slug>.md`
+then enter Plan Mode with Shift+Tab twice to begin implementation."
 
-## Constraints
-
-- Always read `CLAUDE.md` before anything else.
-- Never switch branches with a dirty working tree.
-- Always sync `main` before branching.
-- Branch names must be kebab-case.
-- Never assume requirements — ask when information is missing.
-- Produce a complete, implementation-ready document.
-- Follow all project conventions from `CLAUDE.md`.
-
+Do not print the full spec in chat unless explicitly asked.
