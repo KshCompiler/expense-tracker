@@ -84,6 +84,7 @@ def seed_db():
     user_id = cursor.lastrowid
 
     expenses = [
+        # April 2026
         (user_id, 450.00,  "Food",          "2026-04-01", "Groceries from D-Mart"),
         (user_id, 120.00,  "Transport",     "2026-04-02", "Metro card recharge"),
         (user_id, 1200.00, "Bills",         "2026-04-03", "Electricity bill"),
@@ -92,6 +93,24 @@ def seed_db():
         (user_id, 800.00,  "Shopping",      "2026-04-07", "New earphones"),
         (user_id, 200.00,  "Other",         "2026-04-08", "Miscellaneous"),
         (user_id, 180.00,  "Food",          "2026-04-08", "Lunch with colleagues"),
+        # May 2026
+        (user_id, 520.00,  "Food",          "2026-05-02", "Weekly groceries"),
+        (user_id, 250.00,  "Transport",     "2026-05-04", "Cab rides"),
+        (user_id, 1400.00, "Bills",         "2026-05-05", "Rent contribution"),
+        (user_id, 600.00,  "Shopping",      "2026-05-10", "Clothing"),
+        (user_id, 300.00,  "Health",        "2026-05-14", "Doctor visit"),
+        (user_id, 150.00,  "Entertainment", "2026-05-18", "Streaming subscriptions"),
+        (user_id, 420.00,  "Food",          "2026-05-22", "Restaurant dinner"),
+        # June 2026
+        (user_id, 680.00,  "Food",          "2026-06-01", "Groceries — Big Basket"),
+        (user_id, 1500.00, "Bills",         "2026-06-03", "Electricity + internet"),
+        (user_id, 200.00,  "Transport",     "2026-06-05", "Auto and cab rides"),
+        (user_id, 450.00,  "Health",        "2026-06-08", "Gym membership"),
+        (user_id, 900.00,  "Shopping",      "2026-06-10", "New shoes"),
+        (user_id, 350.00,  "Entertainment", "2026-06-14", "Concert tickets"),
+        (user_id, 280.00,  "Food",          "2026-06-17", "Team lunch"),
+        (user_id, 120.00,  "Transport",     "2026-06-19", "Metro monthly pass"),
+        (user_id, 175.00,  "Other",         "2026-06-21", "Stationery and misc"),
     ]
 
     conn.executemany(
