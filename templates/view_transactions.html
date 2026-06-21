@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions — Spendly{% endblock %}
+
+{% block head %}
+<style>
+    .txn-wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2.5rem 2rem 4rem;
+    }
+
+    .txn-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.75rem;
+        gap: 1rem;
+    }
+
+    .txn-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        color: var(--ink);
+    }
+
+    .txn-add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--ink);
+        color: var(--paper);
+        padding: 0.55rem 1.25rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+
+    .txn-add-btn:hover { background: var(--accent); }
+
+    .txn-card {
+        background: var(--paper-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    @media (max-width: 640px) {
+        .txn-wrap { padding: 1.25rem 1rem 3rem; }
+        .txn-header { flex-direction: column; align-items: flex-start; }
+        .transactions-table th:nth-child(3),
+        .transactions-table td:nth-child(3) { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="txn-wrap">
+
+    <div class="txn-header">
+        <h1 class="txn-title">All Transactions</h1>
+        <a href="{{ url_for('add_expense') }}" class="txn-add-btn">+ Add Expense</a>
+    </div>
+
+    <div class="txn-card">
+        {% if transactions %}
+        <table class="transactions-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for txn in transactions %}
+                <tr>
+                    <td>{{ txn['date'] }}</td>
+                    <td>
+                        <span class="category-tag {{ txn['category']|lower }}">
+                            {{ txn['category'] }}
+                        </span>
+                    </td>
+                    <td>{{ txn['description'] or '—' }}</td>
+                    <td><strong>₹{{ "%.2f"|format(txn['amount']) }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <span class="empty-icon">📋</span>
+            <p>No transactions yet. Start tracking your spending!</p>
+            <a href="{{ url_for('add_expense') }}" class="btn-primary">Add your first expense</a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

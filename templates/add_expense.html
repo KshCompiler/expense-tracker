@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense — Spendly{% endblock %}
+
+{% block head %}
+<style>
+    /* ── Page layout ── */
+    .exp-section {
+        min-height: calc(100vh - 60px - 100px);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 3rem 1.5rem 4rem;
+    }
+
+    .exp-container {
+        width: 100%;
+        max-width: 560px;
+    }
+
+    /* ── Category grid ── */
+    .cat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.6rem;
+        margin-top: 0.4rem;
+    }
+
+    .cat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.7rem 0.5rem;
+        background: var(--paper);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s, transform 0.1s;
+        user-select: none;
+    }
+
+    .cat-item:hover {
+        border-color: var(--ink-muted);
+        transform: translateY(-1px);
+    }
+
+    .cat-item.selected {
+        border-color: var(--accent);
+        background: var(--accent-light);
+    }
+
+    .cat-icon {
+        font-size: 1.4rem;
+        line-height: 1;
+    }
+
+    .cat-label {
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: var(--ink-muted);
+        text-align: center;
+        line-height: 1.2;
+    }
+
+    .cat-item.selected .cat-label {
+        color: var(--accent);
+        font-weight: 600;
+    }
+
+    /* ── Custom date picker ── */
+    .datepicker-wrap {
+        position: relative;
+    }
+
+    .datepicker-trigger {
+        width: 100%;
+        padding: 0.6rem 0.875rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        color: var(--ink);
+        background: var(--paper);
+        cursor: pointer;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        transition: border-color 0.2s;
+    }
+
+    .datepicker-trigger:hover,
+    .datepicker-trigger:focus {
+        border-color: var(--accent);
+        outline: none;
+    }
+
+    .datepicker-trigger .dp-placeholder { color: var(--ink-faint); }
+
+    .dp-icon { font-size: 1rem; color: var(--ink-muted); flex-shrink: 0; }
+
+    /* ── Calendar popup ── */
+    .cal-popup {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        z-index: 200;
+        width: 300px;
+        background: var(--paper-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        padding: 1rem;
+    }
+
+    .cal-popup[hidden] { display: none; }
+
+    .cal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+    }
+
+    .cal-nav {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.8rem;
+        color: var(--ink-muted);
+        transition: border-color 0.15s, color 0.15s;
+        flex-shrink: 0;
+    }
+
+    .cal-nav:hover { border-color: var(--ink); color: var(--ink); }
+
+    .cal-month-label {
+        font-family: var(--font-display);
+        font-size: 1rem;
+        color: var(--ink);
+        text-align: center;
+        flex: 1;
+    }
+
+    .cal-daynames {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        margin-bottom: 0.35rem;
+    }
+
+    .cal-dayname {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--ink-faint);
+        text-align: center;
+        text-transform: uppercase;
+        padding: 0.2rem 0;
+    }
+
+    .cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+    }
+
+    .cal-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        cursor: pointer;
+        color: var(--ink-soft);
+        transition: background 0.12s, color 0.12s;
+        font-family: var(--font-body);
+    }
+
+    .cal-day:hover { background: var(--border-soft); }
+
+    .cal-day.empty { cursor: default; pointer-events: none; }
+
+    .cal-day.today {
+        font-weight: 600;
+        color: var(--accent);
+        box-shadow: inset 0 0 0 1.5px var(--accent);
+    }
+
+    .cal-day.selected {
+        background: var(--accent);
+        color: var(--paper);
+        font-weight: 600;
+    }
+
+    .cal-day.selected:hover { background: var(--accent); }
+
+    .cal-today-btn {
+        margin-top: 0.75rem;
+        width: 100%;
+        padding: 0.45rem;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-size: 0.8rem;
+        color: var(--ink-muted);
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s;
+    }
+
+    .cal-today-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+        .cat-grid { grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+        .cat-item { padding: 0.6rem 0.3rem; }
+        .cat-icon { font-size: 1.25rem; }
+        .cal-popup { width: calc(100vw - 3rem); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="exp-section">
+    <div class="exp-container">
+
+        <div class="auth-header">
+            <h1 class="auth-title">Add Expense</h1>
+            <p class="auth-subtitle">Log a new expense to keep your finances on track.</p>
+        </div>
+
+        <div class="auth-card">
+            <form method="POST" action="{{ url_for('add_expense') }}" id="expense-form">
+
+                <!-- Amount -->
+                <div class="form-group">
+                    <label for="amount">Amount (₹)</label>
+                    <input
+                        type="number"
+                        id="amount"
+                        name="amount"
+                        class="form-input"
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0.01"
+                        required
+                        autofocus
+                    >
+                </div>
+
+                <!-- Category grid -->
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="hidden" id="category" name="category" required>
+                    <div class="cat-grid">
+                        <div class="cat-item" data-value="Food">
+                            <span class="cat-icon">🍔</span>
+                            <span class="cat-label">Food</span>
+                        </div>
+                        <div class="cat-item" data-value="Transport">
+                            <span class="cat-icon">🚌</span>
+                            <span class="cat-label">Transport</span>
+                        </div>
+                        <div class="cat-item" data-value="Bills">
+                            <span class="cat-icon">💡</span>
+                            <span class="cat-label">Bills</span>
+                        </div>
+                        <div class="cat-item" data-value="Health">
+                            <span class="cat-icon">💊</span>
+                            <span class="cat-label">Health</span>
+                        </div>
+                        <div class="cat-item" data-value="Entertainment">
+                            <span class="cat-icon">🎬</span>
+                            <span class="cat-label">Entertainment</span>
+                        </div>
+                        <div class="cat-item" data-value="Shopping">
+                            <span class="cat-icon">🛍️</span>
+                            <span class="cat-label">Shopping</span>
+                        </div>
+                        <div class="cat-item" data-value="Other">
+                            <span class="cat-icon">📦</span>
+                            <span class="cat-label">Other</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom date picker -->
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="hidden" id="date" name="date" required>
+                    <div class="datepicker-wrap">
+                        <button type="button" class="datepicker-trigger" id="dp-trigger" aria-haspopup="true" aria-expanded="false">
+                            <span id="dp-display" class="dp-placeholder">Select a date</span>
+                            <span class="dp-icon">📅</span>
+                        </button>
+                        <div class="cal-popup" id="cal-popup" hidden>
+                            <div class="cal-header">
+                                <button type="button" class="cal-nav" id="cal-prev">&#8249;</button>
+                                <span class="cal-month-label" id="cal-month-label"></span>
+                                <button type="button" class="cal-nav" id="cal-next">&#8250;</button>
+                            </div>
+                            <div class="cal-daynames">
+                                <div class="cal-dayname">Su</div>
+                                <div class="cal-dayname">Mo</div>
+                                <div class="cal-dayname">Tu</div>
+                                <div class="cal-dayname">We</div>
+                                <div class="cal-dayname">Th</div>
+                                <div class="cal-dayname">Fr</div>
+                                <div class="cal-dayname">Sa</div>
+                            </div>
+                            <div class="cal-grid" id="cal-grid"></div>
+                            <button type="button" class="cal-today-btn" id="cal-today-btn">Today</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="description">
+                        Description
+                        <span style="color:var(--ink-faint);font-weight:400;">(optional)</span>
+                    </label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        class="form-input"
+                        placeholder="What was this expense for?"
+                        rows="2"
+                        style="resize:vertical;"
+                    ></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">Save Expense</button>
+            </form>
+        </div>
+
+        <p class="auth-switch">
+            <a href="{{ url_for('dashboard') }}">&larr; Back to Dashboard</a>
+        </p>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+
+    /* ── Category selection ── */
+    const catInput   = document.getElementById('category');
+    const catItems   = document.querySelectorAll('.cat-item');
+
+    catItems.forEach(function (item) {
+        item.addEventListener('click', function () {
+            catItems.forEach(function (i) { i.classList.remove('selected'); });
+            item.classList.add('selected');
+            catInput.value = item.dataset.value;
+        });
+    });
+
+    /* ── Calendar ── */
+    const dateInput  = document.getElementById('date');
+    const dpTrigger  = document.getElementById('dp-trigger');
+    const dpDisplay  = document.getElementById('dp-display');
+    const calPopup   = document.getElementById('cal-popup');
+    const calGrid    = document.getElementById('cal-grid');
+    const calLabel   = document.getElementById('cal-month-label');
+    const prevBtn    = document.getElementById('cal-prev');
+    const nextBtn    = document.getElementById('cal-next');
+    const todayBtn   = document.getElementById('cal-today-btn');
+
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+
+    var cursor   = new Date();   // month currently shown in calendar
+    var selected = null;         // currently selected Date or null
+
+    function localToday() {
+        var t = new Date();
+        return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+    }
+
+    function toValue(d) {
+        var y  = d.getFullYear();
+        var m  = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + dd;
+    }
+
+    function toDisplay(d) {
+        return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    function renderCalendar() {
+        var year  = cursor.getFullYear();
+        var month = cursor.getMonth();
+        calLabel.textContent = MONTHS[month] + ' ' + year;
+
+        var firstWeekday = new Date(year, month, 1).getDay();
+        var daysInMonth  = new Date(year, month + 1, 0).getDate();
+        var today        = localToday();
+
+        calGrid.innerHTML = '';
+
+        for (var i = 0; i < firstWeekday; i++) {
+            var empty = document.createElement('div');
+            empty.className = 'cal-day empty';
+            calGrid.appendChild(empty);
+        }
+
+        for (var d = 1; d <= daysInMonth; d++) {
+            var btn  = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cal-day';
+            btn.textContent = d;
+
+            var thisDate = new Date(year, month, d);
+
+            if (thisDate.getTime() === today.getTime()) {
+                btn.classList.add('today');
+            }
+            if (selected && thisDate.getTime() === selected.getTime()) {
+                btn.classList.add('selected');
+            }
+
+            btn.addEventListener('click', (function (date) {
+                return function () {
+                    selectDate(date);
+                };
+            })(thisDate));
+
+            calGrid.appendChild(btn);
+        }
+    }
+
+    function selectDate(date) {
+        selected = date;
+        dateInput.value = toValue(date);
+        dpDisplay.textContent = toDisplay(date);
+        dpDisplay.classList.remove('dp-placeholder');
+        closeCalendar();
+    }
+
+    function openCalendar() {
+        calPopup.hidden = false;
+        dpTrigger.setAttribute('aria-expanded', 'true');
+        renderCalendar();
+    }
+
+    function closeCalendar() {
+        calPopup.hidden = true;
+        dpTrigger.setAttribute('aria-expanded', 'false');
+    }
+
+    dpTrigger.addEventListener('click', function () {
+        calPopup.hidden ? openCalendar() : closeCalendar();
+    });
+
+    prevBtn.addEventListener('click', function () {
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+        renderCalendar();
+    });
+
+    nextBtn.addEventListener('click', function () {
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        renderCalendar();
+    });
+
+    todayBtn.addEventListener('click', function () {
+        cursor = localToday();
+        selectDate(localToday());
+    });
+
+    /* Close calendar when clicking outside */
+    document.addEventListener('click', function (e) {
+        if (!calPopup.hidden && !calPopup.contains(e.target) && e.target !== dpTrigger && !dpTrigger.contains(e.target)) {
+            closeCalendar();
+        }
+    });
+
+    /* Validate category + date on submit */
+    document.getElementById('expense-form').addEventListener('submit', function (e) {
+        if (!catInput.value) {
+            e.preventDefault();
+            catItems[0].closest('.form-group') && alert('Please select a category.');
+            return;
+        }
+        if (!dateInput.value) {
+            e.preventDefault();
+            alert('Please select a date.');
+            return;
+        }
+    });
+
+    /* Default to today */
+    selectDate(localToday());
+
+})();
+</script>
+{% endblock %}
