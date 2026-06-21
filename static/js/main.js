@@ -45,10 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
             progressBar.style.width = '0%';
         }, 4000);
 
-        // Redirect after 4.5 seconds (slightly after modal starts dismissing)
-        setTimeout(function() {
-            window.location.href = '/'; // Redirect to home page
-        }, 4500);
     }
 
     // Close modal if clicked outside

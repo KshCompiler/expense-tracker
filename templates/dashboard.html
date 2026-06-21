@@ -1,191 +1,383 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Spendly{% endblock %}
+{% block title %}Dashboard — Spendly{% endblock %}
+
+{% block head %}
+<style>
+    /* ── Dashboard layout ── */
+    .db-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 2.5rem 2rem 4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    /* ── Welcome banner ── */
+    .db-welcome {
+        background: var(--paper-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .db-welcome-left h1 {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        color: var(--ink);
+        margin-bottom: 0.2rem;
+    }
+
+    .db-welcome-left p {
+        font-size: 0.875rem;
+        color: var(--ink-muted);
+    }
+
+    .db-add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--ink);
+        color: var(--paper);
+        padding: 0.55rem 1.25rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+
+    .db-add-btn:hover { background: var(--accent); }
+
+    /* ── Stat cards ── */
+    .db-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+
+    .db-stat {
+        background: var(--paper-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.25rem 1.5rem;
+        border-left: 4px solid var(--border);
+    }
+
+    .db-stat.stat-expense { border-left-color: var(--danger); }
+    .db-stat.stat-income  { border-left-color: var(--accent); }
+    .db-stat.stat-balance { border-left-color: var(--accent-2); }
+    .db-stat.stat-count   { border-left-color: #5b7fa6; }
+
+    .db-stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ink-muted);
+        margin-bottom: 0.6rem;
+    }
+
+    .db-stat-value {
+        font-family: var(--font-display);
+        font-size: 1.6rem;
+        color: var(--ink);
+        line-height: 1;
+        margin-bottom: 0.3rem;
+    }
+
+    .db-stat-value.neg { color: var(--danger); }
+    .db-stat-value.pos { color: var(--accent); }
+
+    .db-stat-sub {
+        font-size: 0.8rem;
+        color: var(--ink-faint);
+    }
+
+    /* ── Main two-column grid ── */
+    .db-main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* ── Section headers ── */
+    .db-section-title {
+        font-family: var(--font-display);
+        font-size: 1.15rem;
+        color: var(--ink);
+        margin-bottom: 1rem;
+    }
+
+    /* ── Category chart card ── */
+    .db-chart-card {
+        background: var(--paper-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+    }
+
+    .db-chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-soft);
+        margin-bottom: 1.25rem;
+    }
+
+    .db-chart-header .db-section-title { margin-bottom: 0; }
+
+    .db-chart-total {
+        font-family: var(--font-display);
+        font-size: 1.3rem;
+        color: var(--ink);
+    }
+
+    .db-bar-row {
+        display: grid;
+        grid-template-columns: 90px 1fr 70px;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .db-bar-row:last-child { margin-bottom: 0; }
+
+    .db-bar-cat {
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--ink-soft);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .db-bar-track {
+        height: 8px;
+        background: var(--border-soft);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .db-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.5s ease;
+    }
+
+    .db-bar-fill.c0 { background: var(--accent); }
+    .db-bar-fill.c1 { background: var(--accent-2); }
+    .db-bar-fill.c2 { background: #5b7fa6; }
+    .db-bar-fill.c3 { background: #8b5e83; }
+    .db-bar-fill.c4 { background: #c17f24; }
+    .db-bar-fill.c5 { background: #2a7a6f; }
+
+    .db-bar-amt {
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--ink-muted);
+        text-align: right;
+    }
+
+    /* ── Recent transactions card ── */
+    .db-txn-card {
+        background: var(--paper-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+    }
+
+    .db-txn-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .db-txn-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid var(--border-soft);
+        gap: 0.75rem;
+    }
+
+    .db-txn-row:last-child { border-bottom: none; }
+
+    .db-txn-left {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+    }
+
+    .db-txn-desc {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .db-txn-meta {
+        font-size: 0.78rem;
+        color: var(--ink-faint);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .db-txn-badge {
+        display: inline-block;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 500;
+    }
+
+    .db-txn-badge.food          { background: var(--accent-2-light); color: var(--accent-2); }
+    .db-txn-badge.transport     { background: #e3f2fd; color: #1565c0; }
+    .db-txn-badge.shopping      { background: #f3e5f5; color: #7b1fa2; }
+    .db-txn-badge.bills         { background: #fff8e1; color: #e65100; }
+    .db-txn-badge.entertainment { background: #fce4ec; color: #c2185b; }
+    .db-txn-badge.health        { background: var(--accent-light); color: var(--accent); }
+    .db-txn-badge.education     { background: #e3f2fd; color: #0d47a1; }
+    .db-txn-badge.other         { background: var(--paper-warm); color: var(--ink-muted); }
+
+    .db-txn-amount {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* ── Empty state ── */
+    .db-empty {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: var(--ink-muted);
+        font-size: 0.9rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+        .db-stats { grid-template-columns: repeat(2, 1fr); }
+        .db-main  { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+        .db-wrap { padding: 1.25rem 1rem 3rem; }
+        .db-stats { grid-template-columns: 1fr 1fr; }
+        .db-welcome { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="dashboard">
-    <!-- Welcome Section -->
-    <section class="welcome-section">
-        <h1 class="welcome-title">Welcome back, {{ user.full_name }}!</h1>
-        <div class="welcome-info">
-            <div class="date">
-                <span class="icon">[Date]</span>
-                <span>{{ today_date }}</span>
-            </div>
-            <div class="time">
-                <span class="icon">[Time]</span>
-                <span>{{ current_time }}</span>
-            </div>
-        </div>
-    </section>
 
-    <!-- Overview Cards -->
-    <div class="overview-cards">
-        <!-- Income Card -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title">Monthly Income</div>
-                <div class="card-subtitle">Total earned this month</div>
-            </div>
-            <div class="card-body">
-                <span class="amount positive">${{ total_income }}</span>
-            </div>
-        </div>
+<div class="db-wrap">
 
-        <!-- Expenses Card -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title">Monthly Expenses</div>
-                <div class="card-subtitle">Total spent this month</div>
-            </div>
-            <div class="card-body">
-                <span class="amount negative">${{ total_expenses }}</span>
-            </div>
+    <!-- Welcome banner -->
+    <div class="db-welcome">
+        <div class="db-welcome-left">
+            <h1>Welcome back, {{ user['full_name'].split()[0] }}</h1>
+            <p>{{ today_date }} &middot; {{ current_time }}</p>
         </div>
+        <a href="{{ url_for('add_expense') }}" class="db-add-btn">+ Add Expense</a>
+    </div>
 
-        <!-- Remaining Balance Card -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title">Remaining Balance</div>
-                <div class="card-subtitle">Income minus expenses</div>
-            </div>
-            <div class="card-body">
-                <span class="amount {% if remaining_balance >= 0 %}positive{% else %}negative{% endif %}">
-                    ${{ remaining_balance }}
-                </span>
-            </div>
+    <!-- Stat cards -->
+    <div class="db-stats">
+        <div class="db-stat stat-expense">
+            <div class="db-stat-label">Total Expenses</div>
+            <div class="db-stat-value neg">₹{{ "%.0f"|format(total_expenses) }}</div>
+            <div class="db-stat-sub">This month</div>
         </div>
-
-        <!-- Transaction Count Card -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title">Transactions</div>
-                <div class="card-subtitle">Expenses this month</div>
+        <div class="db-stat stat-income">
+            <div class="db-stat-label">Total Income</div>
+            <div class="db-stat-value pos">₹{{ "%.0f"|format(total_income) }}</div>
+            <div class="db-stat-sub">This month</div>
+        </div>
+        <div class="db-stat stat-balance">
+            <div class="db-stat-label">Balance</div>
+            <div class="db-stat-value {% if remaining_balance >= 0 %}pos{% else %}neg{% endif %}">
+                ₹{{ "%.0f"|format(remaining_balance) }}
             </div>
-            <div class="card-body">
-                <span class="amount">{{ transaction_count }}</span>
-            </div>
+            <div class="db-stat-sub">Income minus expenses</div>
+        </div>
+        <div class="db-stat stat-count">
+            <div class="db-stat-label">Transactions</div>
+            <div class="db-stat-value">{{ transaction_count }}</div>
+            <div class="db-stat-sub">This month</div>
         </div>
     </div>
 
-    <!-- Analytics Section -->
-    <section class="analytics-section">
-        <h2 class="section-title">
-            <span class="icon">[Chart]</span>
-            Expense Breakdown
-        </h2>
-        <div class="analytics-grid">
-            <!-- Category Breakdown -->
-            <div class="category-breakdown">
-                <h3 class="breakdown-title">By Category</h3>
-                <div class="breakdown-list">
-                    {% for category in categories %}
-                    <div class="breakdown-item">
-                        <span class="category-name">{{ category.category }}</span>
-                        <div>
-                            <span class="category-amount">${{ category.total }}</span>
-                            {% if total_expenses > 0 %}
-                            <span class="category-percentage">
-                                {{ ((category.total / total_expenses) * 100)|round(1) }}%
-                            </span>
-                            {% endif %}
+    <!-- Main content: chart + recent transactions side by side -->
+    <div class="db-main">
+
+        <!-- Spending by Category -->
+        <div class="db-chart-card">
+            <div class="db-chart-header">
+                <span class="db-section-title">Spending by Category</span>
+                <span class="db-chart-total">₹{{ "%.0f"|format(total_expenses) }}</span>
+            </div>
+            {% if categories %}
+            <div>
+                {% for cat in categories %}
+                {% set width = ((cat['total'] / total_expenses * 100) | round | int) if total_expenses > 0 else 0 %}
+                <div class="db-bar-row">
+                    <span class="db-bar-cat">{{ cat['category'] }}</span>
+                    <div class="db-bar-track">
+                        <div class="db-bar-fill c{{ loop.index0 % 6 }}" style="width: {{ width }}%"></div>
+                    </div>
+                    <span class="db-bar-amt">₹{{ "%.0f"|format(cat['total']) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="db-empty">No expenses this month yet.</div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="db-txn-card">
+            <div class="db-chart-header">
+                <span class="db-section-title">Recent Transactions</span>
+                <a href="{{ url_for('view_transactions') }}" style="font-size:0.8rem;color:var(--accent);font-weight:500;">View all</a>
+            </div>
+            {% if has_transactions %}
+            <div class="db-txn-list">
+                {% for txn in recent_transactions %}
+                <div class="db-txn-row">
+                    <div class="db-txn-left">
+                        <span class="db-txn-desc">{{ txn['description'] or txn['category'] }}</span>
+                        <div class="db-txn-meta">
+                            <span>{{ txn['date'] }}</span>
+                            <span class="db-txn-badge {{ txn['category']|lower }}">{{ txn['category'] }}</span>
                         </div>
                     </div>
-                    {% endfor %}
-                    {% if categories|length == 0 %}
-                    <div class="breakdown-item">
-                        <span class="category-name">No expenses yet</span>
-                    </div>
-                    {% endif %}
+                    <span class="db-txn-amount">₹{{ "%.0f"|format(txn['amount']) }}</span>
                 </div>
-            </div>
-
-            <!-- Chart Placeholder (for future enhancement) -->
-            <div class="chart-container">
-                <h3 class="chart-title">
-                    <span class="icon">[Trend]</span>
-                    Monthly Trend
-                </h3>
-                <div class="chart-placeholder">
-                    <div class="chart-icon">[Chart]</div>
-                    <p>Chart visualization coming soon</p>
-                    <p class="no-chart-data">Expense trends will appear here</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Recent Transactions -->
-    <section class="transactions-section">
-        <h2 class="section-title">
-            <span class="icon">[List]</span>
-            Recent Transactions
-        </h2>
-        {% if recent_transactions %}
-        <table class="transactions-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Description</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for transaction in recent_transactions %}
-                <tr>
-                    <td>{{ transaction.date }}</td>
-                    <td>
-                        <span class="category-tag {% if transaction.category == 'Food' %}food{% elif transaction.category == 'Transport' %}transport{% elif transaction.category == 'Shopping' %}shopping{% elif transaction.category == 'Bills' %}bills{% elif transaction.category == 'Entertainment' %}entertainment{% elif transaction.category == 'Health' %}health{% elif transaction.category == 'Education' %}education{% else %}other{% endif %}">
-                            {{ transaction.category }}
-                        </span>
-                    </td>
-                    <td>{{ transaction.description or 'No description' }}</td>
-                    <td class="amount negative">${{ transaction.amount }}</td>
-                </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">
-            <div class="empty-icon">[No Mail]</div>
-            <p>No transactions yet. Start by adding your first expense!</p>
-            <a href="{{ url_for('add_expense') }}" class="action-btn">
-                <div class="action-icon">+</div>
-                <div class="action-text">Add Expense</div>
-            </a>
+            </div>
+            {% else %}
+            <div class="db-empty">No transactions yet.</div>
+            {% endif %}
         </div>
-        {% endif %}
-    </section>
 
-    <!-- Quick Actions -->
-    <section class="quick-actions">
-        <h2 class="section-title">
-            <span class="icon">[Action]</span>
-            Quick Actions
-        </h2>
-        <div class="actions-grid">
-            <a href="{{ url_for('add_expense') }}" class="action-btn">
-                <div class="action-icon">+</div>
-                <div class="action-text">Add Expense</div>
-            </a>
-            <a href="{{ url_for('view_transactions') }}" class="action-btn">
-                <div class="action-icon">[List]</div>
-                <div class="action-text">View All</div>
-            </a>
-            <a href="{{ url_for('profile') }}" class="action-btn">
-                <div class="action-icon">[Person]</div>
-                <div class="action-text">Profile</div>
-            </a>
-            <a href="{{ url_for('logout') }}" class="action-btn">
-                <div class="action-icon">[Door]</div>
-                <div class="action-text">Logout</div>
-            </a>
-        </div>
-    </section>
+    </div>
+
 </div>
-{% endblock %}
 
-{% block scripts %}
-{{ super() }}
 {% endblock %}
