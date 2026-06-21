@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Add Expense — Spendly{% endblock %}
+{% block title %}Edit Expense — Spendly{% endblock %}
 
 
 {% block content %}
@@ -8,12 +8,12 @@
     <div class="exp-container">
 
         <div class="auth-header">
-            <h1 class="auth-title">Add Expense</h1>
-            <p class="auth-subtitle">Log a new expense to keep your finances on track.</p>
+            <h1 class="auth-title">Edit Expense</h1>
+            <p class="auth-subtitle">Update the details of this expense.</p>
         </div>
 
         <div class="auth-card">
-            <form method="POST" action="{{ url_for('add_expense') }}" id="expense-form">
+            <form method="POST" action="{{ url_for('edit_expense', id=expense['id']) }}" id="expense-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
                 <!-- Amount -->
@@ -27,6 +27,7 @@
                         placeholder="0.00"
                         step="0.01"
                         min="0.01"
+                        value="{{ '%.2f'|format(expense['amount']) }}"
                         required
                         autofocus
                     >
@@ -35,7 +36,7 @@
                 <!-- Category grid -->
                 <div class="form-group">
                     <label>Category</label>
-                    <input type="hidden" id="category" name="category" required>
+                    <input type="hidden" id="category" name="category" value="{{ expense['category'] }}" required>
                     <div class="cat-grid">
                         <div class="cat-item" data-value="Food">
                             <span class="cat-icon">🍔</span>
@@ -71,7 +72,7 @@
                 <!-- Custom date picker -->
                 <div class="form-group">
                     <label>Date</label>
-                    <input type="hidden" id="date" name="date" required>
+                    <input type="hidden" id="date" name="date" value="{{ expense['date'] }}" required>
                     <div class="datepicker-wrap">
                         <button type="button" class="datepicker-trigger" id="dp-trigger" aria-haspopup="true" aria-expanded="false">
                             <span id="dp-display" class="dp-placeholder">Select a date</span>
@@ -111,15 +112,15 @@
                         placeholder="What was this expense for?"
                         rows="2"
                         style="resize:vertical;"
-                    ></textarea>
+                    >{{ expense['description'] or '' }}</textarea>
                 </div>
 
-                <button type="submit" class="btn-submit">Save Expense</button>
+                <button type="submit" class="btn-submit">Update Expense</button>
             </form>
         </div>
 
         <p class="auth-switch">
-            <a href="{{ url_for('dashboard') }}">&larr; Back to Dashboard</a>
+            <a href="{{ url_for('view_transactions') }}">&larr; Cancel</a>
         </p>
 
     </div>
@@ -128,5 +129,10 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/expense-form.js') }}"></script>
-<script>initExpenseForm({});</script>
+<script>
+initExpenseForm({
+    preselectedCategory: {{ expense['category']|tojson }},
+    preselectedDate: {{ expense['date']|tojson }}
+});
+</script>
 {% endblock %}

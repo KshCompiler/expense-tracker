@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
 from database.db import get_db, init_db, close_db, create_user, get_user_by_email
 from werkzeug.security import check_password_hash
 import os
 import re
+import secrets
 from datetime import datetime
 
 app = Flask(__name__)
@@ -10,6 +11,7 @@ app.secret_key = 'dev-secret-key-change-in-production'  # Needed for flash messa
 
 # Email validation regex
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+VALID_CATEGORIES = {'Food', 'Transport', 'Bills', 'Health', 'Entertainment', 'Shopping', 'Other'}
 
 # Initialize database
 init_db()
@@ -21,6 +23,19 @@ seed_db()
 @app.teardown_appcontext
 def teardown_db(e=None):
     close_db(e)
+
+
+@app.context_processor
+def inject_csrf_token():
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(32)
+    return dict(csrf_token=session['csrf_token'])
+
+
+def check_csrf():
+    token = request.form.get('csrf_token')
+    if not token or token != session.get('csrf_token'):
+        abort(403)
 
 
 # ------------------------------------------------------------------ #
@@ -81,8 +96,6 @@ def register():
     return render_template("register.html")
 
 
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -97,7 +110,7 @@ def login():
         user = get_user_by_email(email)
 
         if user and check_password_hash(user['password_hash'], password):
-            # Store user info in session
+            session.clear()
             session['user_id'] = user['id']
             session['user_email'] = user['email']
             session['user_full_name'] = user['full_name']
@@ -193,6 +206,8 @@ def edit_expense(id):
         return redirect(url_for("view_transactions"))
 
     if request.method == "POST":
+        check_csrf()
+
         # Get form data
         amount = request.form.get("amount")
         category = request.form.get("category")
@@ -202,6 +217,16 @@ def edit_expense(id):
         # Basic validation
         if not amount or not category or not date:
             flash("Amount, category, and date are required!", "error")
+            return render_template("edit_expense.html", expense=expense)
+
+        if category not in VALID_CATEGORIES:
+            flash("Please select a valid category!", "error")
+            return render_template("edit_expense.html", expense=expense)
+
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            flash("Please enter a valid date!", "error")
             return render_template("edit_expense.html", expense=expense)
 
         try:
@@ -242,6 +267,8 @@ def delete_expense(id):
         flash("Expense not found or you don't have permission to delete it.", "error")
         return redirect(url_for("view_transactions"))
 
+    check_csrf()
+
     # Delete expense using helper function
     from database.db import delete_expense_helper
     try:
@@ -261,6 +288,8 @@ def add_expense():
         return redirect(url_for("login"))
 
     if request.method == "POST":
+        check_csrf()
+
         # Get form data
         amount = request.form.get("amount")
         category = request.form.get("category")
@@ -270,6 +299,16 @@ def add_expense():
         # Basic validation
         if not amount or not category or not date:
             flash("Amount, category, and date are required!", "error")
+            return render_template("add_expense.html")
+
+        if category not in VALID_CATEGORIES:
+            flash("Please select a valid category!", "error")
+            return render_template("add_expense.html")
+
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            flash("Please enter a valid date!", "error")
             return render_template("add_expense.html")
 
         try:
