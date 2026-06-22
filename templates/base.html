@@ -30,31 +30,17 @@
         </div>
     </nav>
 
-    <!-- Flash message popup -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        {% for category, message in messages %}
-          <div class="flash-message flash-{{ category }}" data-message="{{ message }}" data-category="{{ category }}">
-          </div>
-        {% endfor %}
+        <div id="flash-data" hidden>
+          {% for category, message in messages %}
+            <span data-category="{{ category }}" data-message="{{ message }}"></span>
+          {% endfor %}
+        </div>
       {% endif %}
     {% endwith %}
 
-    <!-- Success Modal -->
-    <div id="successModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span class="modal-icon">✓</span>
-                <h2 class="modal-title">Account Created Successfully!</h2>
-            </div>
-            <div class="modal-body">
-                <p class="modal-description">Welcome! Your account has been created successfully. Redirecting to the home page...</p>
-                <div class="modal-progress">
-                    <div class="progress-bar"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
     <main class="main-content">
         {% block content %}{% endblock %}
