@@ -45,4 +45,31 @@ document.addEventListener('DOMContentLoaded', function () {
             showToast(el.dataset.message, el.dataset.category);
         });
     }
+
+    const avatarBtn = document.getElementById('nav-avatar-btn');
+    const profilePanel = document.getElementById('nav-profile-panel');
+
+    if (avatarBtn && profilePanel) {
+        avatarBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const isOpen = !profilePanel.hidden;
+            profilePanel.hidden = isOpen;
+            avatarBtn.setAttribute('aria-expanded', String(!isOpen));
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!profilePanel.hidden && !profilePanel.contains(e.target)) {
+                profilePanel.hidden = true;
+                avatarBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !profilePanel.hidden) {
+                profilePanel.hidden = true;
+                avatarBtn.setAttribute('aria-expanded', 'false');
+                avatarBtn.focus();
+            }
+        });
+    }
 });

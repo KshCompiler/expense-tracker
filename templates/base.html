@@ -21,7 +21,17 @@
             <div class="nav-links">
                 {% if session.get('user_id') %}
                     <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                    <a href="{{ url_for('logout') }}" class="nav-cta">Sign out</a>
+                    <div class="nav-avatar-wrap">
+                        <button class="nav-avatar" id="nav-avatar-btn" aria-expanded="false" aria-haspopup="true">
+                            {{ session['user_full_name'][0] | upper }}
+                        </button>
+                        <div class="nav-profile-panel" id="nav-profile-panel" hidden>
+                            <div class="npp-avatar">{{ session['user_full_name'][0] | upper }}</div>
+                            <div class="npp-name">{{ session['user_full_name'] }}</div>
+                            <div class="npp-email">{{ session['user_email'] }}</div>
+                            <a href="{{ url_for('logout') }}" class="npp-signout">Sign out</a>
+                        </div>
+                    </div>
                 {% else %}
                     <a href="{{ url_for('login') }}">Sign in</a>
                     <a href="{{ url_for('register') }}" class="nav-cta">Get started</a>
