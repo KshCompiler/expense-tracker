@@ -108,15 +108,15 @@
     </div>
 </section>
 
+{% if not session.get('user_id') %}
 <section class="cta-section">
     <div class="cta-inner">
         <h2 class="cta-title">Your finances deserve clarity</h2>
         <p class="cta-body">Join thousands of people who track their expenses with Spendly.</p>
-        {% if not session.get('user_id') %}
         <a href="{{ url_for('register') }}" class="btn-primary btn-lg">Create free account</a>
         <p class="cta-note">Takes less than 30 seconds &middot; Always free</p>
-        {% endif %}
     </div>
 </section>
+{% endif %}
 
 {% endblock %}

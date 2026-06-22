@@ -186,6 +186,7 @@ a { color: inherit; text-decoration: none; }
 .mock-card {
     background: var(--paper-card);
     border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
     border-radius: var(--radius-lg);
     padding: 2rem;
     width: 100%;
@@ -1228,10 +1229,6 @@ a { color: inherit; text-decoration: none; }
     font-size: 0.8rem;
     color: var(--ink-faint);
     letter-spacing: 0.01em;
-}
-
-.mock-card {
-    border-top: 3px solid var(--accent);
 }
 
 .mock-mini-stats {

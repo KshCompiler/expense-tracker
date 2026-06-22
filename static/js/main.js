@@ -16,10 +16,11 @@ function showToast(message, category = 'info') {
     toast.setAttribute('role', 'alert');
     toast.innerHTML = `
         <span class="toast-icon" aria-hidden="true">${TOAST_ICONS[category] || TOAST_ICONS.info}</span>
-        <span class="toast-message">${message}</span>
+        <span class="toast-message"></span>
         <button class="toast-close" aria-label="Dismiss">&times;</button>
         <span class="toast-progress" style="animation-duration:${TOAST_DURATION}ms"></span>
     `;
+    toast.querySelector('.toast-message').textContent = message;
 
     container.appendChild(toast);
 

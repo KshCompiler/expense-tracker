@@ -307,7 +307,6 @@ def add_expense():
 
         try:
             datetime.strptime(date, "%Y-%m-%d")
-
         except ValueError:
             flash("Please enter a valid date!", "error")
             return render_template("add_expense.html")
