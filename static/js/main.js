@@ -1,57 +1,48 @@
-// main.js — students will add JavaScript here as features are built
+const TOAST_DURATION = 4000;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Check for flash messages and show success modal if applicable
-    const flashMessages = document.querySelectorAll('.flash-message');
+const TOAST_ICONS = {
+    success: '✓',
+    error: '✕',
+    warning: '⚠',
+    info: 'ℹ',
+};
 
-    flashMessages.forEach(function(message) {
-        const category = message.getAttribute('data-category');
-        const text = message.getAttribute('data-message');
+function showToast(message, category = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
 
-        // Show success modal for success messages
-        if (category === 'success') {
-            showSuccessModal(text);
-        }
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${category}`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <span class="toast-icon" aria-hidden="true">${TOAST_ICONS[category] || TOAST_ICONS.info}</span>
+        <span class="toast-message"></span>
+        <button class="toast-close" aria-label="Dismiss">&times;</button>
+        <span class="toast-progress" style="animation-duration:${TOAST_DURATION}ms"></span>
+    `;
+    toast.querySelector('.toast-message').textContent = message;
 
-        // Remove flash message after 5 seconds
-        setTimeout(function() {
-            message.style.animation = 'slideOut 0.3s ease-out';
-            message.addEventListener('animationend', function() {
-                message.remove();
-            });
-        }, 5000);
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => toast.classList.add('toast-in'));
     });
 
-    function showSuccessModal(description) {
-        const modal = document.getElementById('successModal');
-        const modalDescription = modal.querySelector('.modal-description');
-        const progressBar = modal.querySelector('.progress-bar');
+    const dismiss = () => {
+        toast.classList.remove('toast-in');
+        toast.classList.add('toast-out');
+        toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+    };
 
-        // Set the description
-        modalDescription.textContent = description;
+    toast.querySelector('.toast-close').addEventListener('click', dismiss);
+    setTimeout(dismiss, TOAST_DURATION);
+}
 
-        // Show the modal
-        modal.style.display = 'block';
-
-        // Animate the progress bar
-        setTimeout(function() {
-            progressBar.style.width = '100%';
-        }, 100);
-
-        // Auto-dismiss modal after 4 seconds (within 3-5 second spec range)
-        setTimeout(function() {
-            modal.style.display = 'none';
-            // Optional: reset progress bar for next use
-            progressBar.style.width = '0%';
-        }, 4000);
-
+document.addEventListener('DOMContentLoaded', function () {
+    const flashData = document.getElementById('flash-data');
+    if (flashData) {
+        flashData.querySelectorAll('[data-category]').forEach(el => {
+            showToast(el.dataset.message, el.dataset.category);
+        });
     }
-
-    // Close modal if clicked outside
-    window.addEventListener('click', function(event) {
-        const modal = document.getElementById('successModal');
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
 });
