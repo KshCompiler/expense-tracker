@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Suggestions — Spendly{% endblock %}
+
+{% block head %}
+<style>
+    .sug-wrap {
+        max-width: 940px;
+        margin: 0 auto;
+        padding: 2.5rem 2rem 4rem;
+    }
+
+    .sug-header {
+        margin-bottom: 2rem;
+    }
+
+    .sug-eyebrow {
+        display: inline-block;
+        background: var(--accent-light);
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.3rem 0.85rem;
+        border-radius: 999px;
+        margin-bottom: 0.75rem;
+    }
+
+    .sug-title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        color: var(--ink);
+        margin-bottom: 0.35rem;
+    }
+
+    .sug-subtitle {
+        font-size: 0.875rem;
+        color: var(--ink-muted);
+    }
+
+    .sug-back {
+        display: inline-block;
+        margin-top: 2rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--accent);
+        text-decoration: none;
+    }
+
+    .sug-back:hover { text-decoration: underline; }
+
+    .suggestions-card-heading {
+        font-family: var(--font-display);
+        font-size: 1.05rem;
+        color: var(--ink);
+        margin-bottom: 0.6rem;
+        line-height: 1.3;
+    }
+
+    .suggestions-card-body {
+        font-size: 0.875rem;
+        color: var(--ink-muted);
+        line-height: 1.65;
+    }
+
+    @media (max-width: 600px) {
+        .sug-wrap { padding: 1.25rem 1rem 3rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sug-wrap">
+
+    <div class="sug-header">
+        <span class="sug-eyebrow">AI Powered</span>
+        <h1 class="sug-title">Smart Spending Suggestions</h1>
+        <p class="sug-subtitle">Personalised tips based on your last 2 months of financial data.</p>
+    </div>
+
+    {% if error %}
+    <div class="suggestions-error">
+        <p>We could not generate suggestions right now. This may be a temporary issue &mdash; please try again in a moment.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn-primary" style="display:inline-block;margin-top:1.25rem;">Back to Dashboard</a>
+    </div>
+    {% elif suggestions %}
+    <div class="suggestions-grid">
+        {% for s in suggestions %}
+        <div class="suggestions-card">
+            <h2 class="suggestions-card-heading">{{ s.heading }}</h2>
+            <p class="suggestions-card-body">{{ s.body }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="suggestions-error">
+        <p>No suggestions were returned. Try adding more income and expense records, then come back.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn-primary" style="display:inline-block;margin-top:1.25rem;">Back to Dashboard</a>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('dashboard') }}" class="sug-back">&larr; Back to Dashboard</a>
+
+</div>
+{% endblock %}

@@ -307,3 +307,38 @@ def delete_expense_helper(expense_id):
         raise e
     finally:
         conn.close()
+
+
+def get_monthly_expense_summary(user_id, year_month):
+    """Return list of (category, total) rows for the given YYYY-MM."""
+    conn = get_db()
+    try:
+        return conn.execute(
+            """
+            SELECT category, SUM(amount) AS total
+            FROM expenses
+            WHERE user_id = ? AND date LIKE ?
+            GROUP BY category
+            ORDER BY total DESC
+            """,
+            (user_id, f"{year_month}%"),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def get_monthly_income_total(user_id, year_month):
+    """Return total income as float for the given YYYY-MM, or 0.0 if none."""
+    conn = get_db()
+    try:
+        row = conn.execute(
+            """
+            SELECT COALESCE(SUM(amount), 0.0) AS total
+            FROM income
+            WHERE user_id = ? AND date LIKE ?
+            """,
+            (user_id, f"{year_month}%"),
+        ).fetchone()
+        return float(row["total"]) if row else 0.0
+    finally:
+        conn.close()
