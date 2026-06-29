@@ -34,6 +34,16 @@ def init_db():
             description TEXT,
             created_at  TEXT    DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS income (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL REFERENCES users(id),
+            amount      REAL    NOT NULL,
+            source      TEXT    NOT NULL,
+            date        TEXT    NOT NULL,
+            description TEXT,
+            created_at  TEXT    DEFAULT (datetime('now'))
+        );
     """)
     conn.commit()
     conn.close()
@@ -117,6 +127,20 @@ def seed_db():
         "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
         expenses,
     )
+
+    income_entries = [
+        (user_id, 50000.00, "Salary",    "2026-04-01", "Monthly salary — April"),
+        (user_id,  5000.00, "Freelance", "2026-04-15", "Web design project"),
+        (user_id, 50000.00, "Salary",    "2026-05-01", "Monthly salary — May"),
+        (user_id,  3500.00, "Freelance", "2026-05-20", "Logo design"),
+        (user_id, 50000.00, "Salary",    "2026-06-01", "Monthly salary — June"),
+        (user_id,  8000.00, "Freelance", "2026-06-10", "App development project"),
+    ]
+    conn.executemany(
+        "INSERT INTO income (user_id, amount, source, date, description) VALUES (?, ?, ?, ?, ?)",
+        income_entries,
+    )
+
     conn.commit()
     conn.close()
 
@@ -145,11 +169,33 @@ def get_user_expenses_this_month(user_id):
 
 def get_user_income_this_month(user_id):
     """Get all income for a user for the current month"""
-    # For now, returning empty list as income tracking is not implemented
-    # This would be implemented when income tracking is added
     conn = get_db()
     try:
-        return []
+        from datetime import datetime
+        current_month = datetime.now().strftime("%Y-%m")
+        income = conn.execute("""
+            SELECT * FROM income
+            WHERE user_id = ? AND date LIKE ?
+            ORDER BY date DESC
+        """, (user_id, f"{current_month}%")).fetchall()
+        return income
+    finally:
+        conn.close()
+
+
+def add_income(user_id, amount, source, date, description):
+    """Add a new income entry for a user"""
+    conn = get_db()
+    try:
+        conn.execute(
+            "INSERT INTO income (user_id, amount, source, date, description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, source, date, description)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        raise e
     finally:
         conn.close()
 

@@ -56,6 +56,11 @@
 
     .db-add-btn:hover { background: var(--accent); }
 
+    .db-add-income-btn { background: var(--accent-2); }
+    .db-add-income-btn:hover { background: #a06820; }
+
+    .db-action-group { display: flex; gap: 0.75rem; flex-shrink: 0; }
+
     /* ── Stat cards ── */
     .db-stats {
         display: grid;
@@ -294,7 +299,10 @@
             <h1>Welcome back, {{ user['full_name'].split()[0] }}</h1>
             <p>{{ today_date }} &middot; {{ current_time }}</p>
         </div>
-        <a href="{{ url_for('add_expense') }}" class="db-add-btn">+ Add Expense</a>
+        <div class="db-action-group">
+            <a href="{{ url_for('add_income') }}" class="db-add-btn db-add-income-btn">+ Add Income</a>
+            <a href="{{ url_for('add_expense') }}" class="db-add-btn">+ Add Expense</a>
+        </div>
     </div>
 
     <!-- Stat cards -->

@@ -12,6 +12,7 @@ app.secret_key = 'dev-secret-key-change-in-production'  # Needed for flash messa
 # Email validation regex
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 VALID_CATEGORIES = {'Food', 'Transport', 'Bills', 'Health', 'Entertainment', 'Shopping', 'Other'}
+VALID_INCOME_SOURCES = {'Salary', 'Freelance', 'Business', 'Investment', 'Gift', 'Other'}
 
 # Initialize database
 init_db()
@@ -188,6 +189,55 @@ def logout():
 
 
 
+
+
+@app.route("/income/add", methods=["GET", "POST"])
+def add_income():
+    if 'user_id' not in session:
+        flash("Please log in to add income.", "error")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        check_csrf()
+
+        amount = request.form.get("amount")
+        source = request.form.get("source")
+        date = request.form.get("date")
+        description = request.form.get("description")
+
+        if not amount or not source or not date:
+            flash("Amount, source, and date are required!", "error")
+            return render_template("add_income.html")
+
+        if source not in VALID_INCOME_SOURCES:
+            flash("Please select a valid income source!", "error")
+            return render_template("add_income.html")
+
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            flash("Please enter a valid date!", "error")
+            return render_template("add_income.html")
+
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                flash("Amount must be greater than zero!", "error")
+                return render_template("add_income.html")
+        except ValueError:
+            flash("Please enter a valid amount!", "error")
+            return render_template("add_income.html")
+
+        from database.db import add_income as db_add_income
+        try:
+            db_add_income(session['user_id'], amount, source, date, description)
+            flash("Income added successfully!", "success")
+            return redirect(url_for("dashboard"))
+        except Exception:
+            flash("An error occurred while adding income. Please try again.", "error")
+            return render_template("add_income.html")
+
+    return render_template("add_income.html")
 
 
 @app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])

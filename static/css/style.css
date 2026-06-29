@@ -722,26 +722,6 @@ a { color: inherit; text-decoration: none; }
 
 .toast-close:hover { color: var(--paper); }
 
-.toast-progress {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 2px;
-    width: 100%;
-    background: rgba(255,255,255,0.18);
-    transform-origin: left;
-    animation: toastDrain linear forwards;
-}
-
-.toast-success .toast-progress { background-color: #4ade80; }
-.toast-error   .toast-progress { background-color: #f87171; }
-.toast-info    .toast-progress { background-color: #60a5fa; }
-.toast-warning .toast-progress { background-color: #fbbf24; }
-
-@keyframes toastDrain {
-    from { transform: scaleX(1); }
-    to   { transform: scaleX(0); }
-}
 
 /* Dashboard Styles */
 .dashboard {
@@ -1288,8 +1268,87 @@ a { color: inherit; text-decoration: none; }
 
 .cal-today-btn:hover { border-color: var(--ink); color: var(--ink); }
 
+/* ------------------------------------------------------------------ */
+/* Income page                                                         */
+/* ------------------------------------------------------------------ */
+
+.income-page-header {
+    text-align: center;
+    margin-bottom: 1.75rem;
+}
+
+.income-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    margin-bottom: 0.85rem;
+}
+
+.income-badge-arrow {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+.income-card {
+    border-top: 3px solid var(--accent);
+}
+
+.amount-input-wrap {
+    position: relative;
+}
+
+.amount-currency {
+    position: absolute;
+    left: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.amount-input {
+    padding-left: 2rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+.income-cat-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.income-cat-item.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+.income-cat-item.selected .cat-label {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.income-submit {
+    background: var(--accent);
+    margin-top: 0.75rem;
+}
+
+.income-submit:hover { background: #0f3319; }
+
 @media (max-width: 480px) {
     .cat-grid { grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+    .income-cat-grid { grid-template-columns: repeat(3, 1fr); }
     .cat-item { padding: 0.6rem 0.3rem; }
     .cat-icon { font-size: 1.25rem; }
     .cal-popup { width: calc(100vw - 3rem); }
