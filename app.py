@@ -5,6 +5,7 @@ import os
 import re
 import secrets
 from datetime import datetime
+import anthropic
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-change-in-production'  # Needed for flash messages
@@ -37,6 +38,50 @@ def check_csrf():
     token = request.form.get('csrf_token')
     if not token or token != session.get('csrf_token'):
         abort(403)
+
+
+# ------------------------------------------------------------------ #
+# AI suggestions helpers                                              #
+# ------------------------------------------------------------------ #
+
+def _build_suggestions_prompt(curr_month, curr_expenses, curr_income,
+                               prev_month, prev_expenses, prev_income):
+    def _fmt(rows):
+        if not rows:
+            return "No expenses recorded"
+        return ", ".join(f"{r['category']}: ₹{r['total']:.0f}" for r in rows)
+
+    curr_label = datetime.strptime(curr_month, "%Y-%m").strftime("%B %Y")
+    prev_label = datetime.strptime(prev_month, "%Y-%m").strftime("%B %Y")
+
+    return (
+        "You are a personal finance advisor. Analyse the two-month spending summary "
+        "below and give this user 4 to 6 practical, specific suggestions.\n\n"
+        "Financial Summary:\n"
+        f"- {prev_label}: Income ₹{prev_income:.0f} | Expenses: {_fmt(prev_expenses)}\n"
+        f"- {curr_label}: Income ₹{curr_income:.0f} | Expenses: {_fmt(curr_expenses)}\n\n"
+        "Rules for your response:\n"
+        "1. Output exactly 4 to 6 suggestion blocks and nothing else.\n"
+        "2. Each block must follow this exact format:\n\n"
+        "### [Heading: 3 to 6 words]\n"
+        "[Body: 2 to 3 sentences of actionable advice tied to the numbers above.]\n\n"
+        "Do not include any introduction, conclusion, numbering, or extra commentary."
+    )
+
+
+def _parse_suggestions(text):
+    blocks = re.split(r"\n?###\s+", text.strip())
+    results = []
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
+        parts = block.split("\n", 1)
+        heading = parts[0].strip()
+        body = parts[1].strip() if len(parts) > 1 else ""
+        if heading and body:
+            results.append({"heading": heading, "body": body})
+    return results[:6]
 
 
 # ------------------------------------------------------------------ #
@@ -414,6 +459,53 @@ def profile():
     user = get_user_by_id(user_id)
 
     return render_template("profile.html", user=user)
+
+
+@app.route("/suggestions")
+def suggestions():
+    if "user_id" not in session:
+        flash("Please log in to view suggestions.", "error")
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+
+    try:
+        now = datetime.now()
+        curr_month = now.strftime("%Y-%m")
+        if now.month == 1:
+            prev_month = f"{now.year - 1}-12"
+        else:
+            prev_month = f"{now.year}-{now.month - 1:02d}"
+
+        from database.db import get_monthly_expense_summary, get_monthly_income_total
+
+        curr_expenses = get_monthly_expense_summary(user_id, curr_month)
+        curr_income   = get_monthly_income_total(user_id, curr_month)
+        prev_expenses = get_monthly_expense_summary(user_id, prev_month)
+        prev_income   = get_monthly_income_total(user_id, prev_month)
+
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
+
+        prompt = _build_suggestions_prompt(
+            curr_month, curr_expenses, curr_income,
+            prev_month, prev_expenses, prev_income,
+        )
+
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw_text = message.content[0].text
+        suggestion_list = _parse_suggestions(raw_text)
+
+        return render_template("suggestions.html", suggestions=suggestion_list, error=False)
+
+    except Exception:
+        return render_template("suggestions.html", suggestions=[], error=True)
 
 
 if __name__ == "__main__":
