@@ -247,6 +247,31 @@ def get_all_user_transactions(user_id):
         conn.close()
 
 
+def get_filtered_transactions(user_id, from_date=None, to_date=None):
+    """Return expenses for user_id filtered by optional date bounds."""
+    conn = get_db()
+    try:
+        conditions = ["user_id = ?"]
+        params = [user_id]
+
+        if from_date:
+            conditions.append("date >= ?")
+            params.append(from_date)
+        if to_date:
+            conditions.append("date <= ?")
+            params.append(to_date)
+
+        where = " AND ".join(conditions)
+        sql = (
+            "SELECT * FROM expenses "
+            "WHERE {} "
+            "ORDER BY date DESC, created_at DESC"
+        ).format(where)
+        return conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
+
+
 def add_expense(user_id, amount, category, date, description):
     """Add a new expense for a user"""
     conn = get_db()
