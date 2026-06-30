@@ -576,22 +576,68 @@ a { color: inherit; text-decoration: none; }
 
 .form-input::placeholder { color: var(--ink-faint); }
 
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-top: 1rem;
+}
+
 .btn-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     width: 100%;
-    padding: 0.7rem;
+    padding: 0.8rem 1.25rem;
     background: var(--ink);
     color: var(--paper);
     border: none;
     border-radius: var(--radius-sm);
     font-family: var(--font-body);
     font-size: 0.95rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 0.5rem;
+    letter-spacing: 0.01em;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
 }
 
-.btn-submit:hover { background: var(--accent); }
+.btn-submit:hover {
+    background: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    color: var(--ink-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btn-cancel:hover {
+    background: var(--border-soft);
+    color: var(--ink);
+    border-color: var(--ink-faint);
+}
 
 .auth-switch {
     text-align: center;
@@ -1363,10 +1409,11 @@ a { color: inherit; text-decoration: none; }
 
 .income-submit {
     background: var(--accent);
-    margin-top: 0.75rem;
 }
 
-.income-submit:hover { background: #0f3319; }
+.income-submit:hover {
+    background: var(--ink);
+}
 
 @media (max-width: 480px) {
     .cat-grid { grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }

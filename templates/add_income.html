@@ -118,13 +118,19 @@
                     ></textarea>
                 </div>
 
-                <button type="submit" class="btn-submit income-submit">Save Income</button>
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit income-submit">
+                        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                        </svg>
+                        Save Income
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn-cancel">
+                        Cancel
+                    </a>
+                </div>
             </form>
         </div>
-
-        <p class="auth-switch">
-            <a href="{{ url_for('dashboard') }}">&larr; Back to Dashboard</a>
-        </p>
 
     </div>
 </section>
