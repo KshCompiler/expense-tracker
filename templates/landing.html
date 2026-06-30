@@ -4,6 +4,9 @@
 
 {% block content %}
 
+<!-- ============================================================ -->
+<!-- HERO                                                          -->
+<!-- ============================================================ -->
 <section class="hero">
     <div class="hero-inner">
         <div class="hero-badge">Personal Finance Tracker</div>
@@ -16,10 +19,15 @@
         </p>
         {% if not session.get('user_id') %}
         <div class="hero-actions">
-            <a href="{{ url_for('register') }}" class="btn-primary">Start tracking free</a>
-            <a href="{{ url_for('login') }}" class="btn-ghost">Sign in</a>
+            <a href="{{ url_for('register') }}" class="btn-primary btn-lg">Start tracking free</a>
+            <a href="{{ url_for('login') }}" class="btn-ghost btn-lg">Sign in</a>
         </div>
-        <p class="hero-trust">Free forever &middot; No credit card required</p>
+        <p class="hero-trust">Free forever &middot; No credit card required &middot; Set up in 30 seconds</p>
+        {% else %}
+        <div class="hero-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn-primary btn-lg">Go to dashboard</a>
+            <a href="{{ url_for('suggestions') }}" class="btn-ghost btn-lg">View AI suggestions</a>
+        </div>
         {% endif %}
     </div>
     <div class="hero-visual">
@@ -72,49 +80,174 @@
                     <span class="mock-amt">₹1,800</span>
                 </div>
             </div>
+            <div class="mock-ai-hint">
+                <span class="mock-ai-dot"></span>
+                <span class="mock-ai-text">AI tip: Food spend up 18% vs last month</span>
+            </div>
         </div>
     </div>
 </section>
 
+<!-- ============================================================ -->
+<!-- STATS STRIP                                                   -->
+<!-- ============================================================ -->
+<div class="stats-strip">
+    <div class="stats-strip-inner">
+        <div class="stat-pill">
+            <span class="stat-pill-num">₹</span>
+            <span class="stat-pill-label">Track every rupee</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-pill">
+            <span class="stat-pill-num">7</span>
+            <span class="stat-pill-label">expense categories</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-pill">
+            <span class="stat-pill-num">AI</span>
+            <span class="stat-pill-label">smart suggestions</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-pill">
+            <span class="stat-pill-num">100%</span>
+            <span class="stat-pill-label">free to use</span>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- FEATURES                                                      -->
+<!-- ============================================================ -->
 <section class="features">
     <div class="features-inner">
         <div class="features-header">
             <span class="features-eyebrow">Why Spendly</span>
             <h2 class="features-heading">Everything you need to own your finances</h2>
+            <p class="features-subheading">No bloat, no subscriptions, no excuses — just a clean tool that helps you spend smarter.</p>
         </div>
         <div class="features-grid">
             <div class="feature-card">
-                <div class="feature-icon-wrap">
-                    <span class="feature-icon">₹</span>
+                <div class="feature-card-top">
+                    <div class="feature-icon-wrap">
+                        <span class="feature-icon">₹</span>
+                    </div>
+                    <span class="feature-num">01</span>
                 </div>
                 <h3 class="feature-title">Log expenses instantly</h3>
-                <p class="feature-body">Add any expense in seconds. Category, amount, date — no bloat, no friction.</p>
+                <p class="feature-body">Add any expense in seconds — category, amount, date. No bloat, no friction, no forgetting.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-wrap">
-                    <span class="feature-icon">◎</span>
+                <div class="feature-card-top">
+                    <div class="feature-icon-wrap">
+                        <span class="feature-icon">◎</span>
+                    </div>
+                    <span class="feature-num">02</span>
                 </div>
                 <h3 class="feature-title">See spending patterns</h3>
                 <p class="feature-body">Category breakdowns reveal exactly where your money goes each month — so you can fix it.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon-wrap">
-                    <span class="feature-icon">◷</span>
+                <div class="feature-card-top">
+                    <div class="feature-icon-wrap">
+                        <span class="feature-icon">✦</span>
+                    </div>
+                    <span class="feature-num">03</span>
                 </div>
-                <h3 class="feature-title">Track over time</h3>
-                <p class="feature-body">Spot trends across bills, food, transport, and health with full monthly history.</p>
+                <h3 class="feature-title">AI-powered advice</h3>
+                <p class="feature-body">Get personalised suggestions based on your actual numbers — not generic tips from the internet.</p>
             </div>
         </div>
     </div>
 </section>
 
+<!-- ============================================================ -->
+<!-- HOW IT WORKS                                                  -->
+<!-- ============================================================ -->
+<section class="how-it-works">
+    <div class="how-inner">
+        <div class="features-header">
+            <span class="features-eyebrow">How it works</span>
+            <h2 class="features-heading">Up and running in three steps</h2>
+        </div>
+        <div class="steps-grid">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3 class="step-title">Create your account</h3>
+                    <p class="step-body">Sign up in under 30 seconds. No credit card, no trial — free from day one.</p>
+                </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3 class="step-title">Log income &amp; expenses</h3>
+                    <p class="step-body">Add transactions as you go. Pick a category, enter the amount, and you're done.</p>
+                </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3 class="step-title">Get AI insights</h3>
+                    <p class="step-body">Spendly analyses two months of data and gives you concrete, actionable suggestions.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- AI SHOWCASE                                                   -->
+<!-- ============================================================ -->
+<section class="ai-showcase">
+    <div class="ai-showcase-inner">
+        <div class="ai-showcase-header">
+            <span class="ai-showcase-eyebrow">Powered by AI</span>
+            <h2 class="ai-showcase-heading">Smart advice, built from your real data</h2>
+            <p class="ai-showcase-subtitle">
+                Spendly analyses your spending patterns across two months and surfaces
+                personalised tips — not generic advice, but insights tied to your numbers.
+            </p>
+        </div>
+        <div class="ai-sample-grid">
+            <div class="ai-sample-card">
+                <div class="ai-sample-icon">✦</div>
+                <h3 class="ai-sample-heading">Reduce Food Spend</h3>
+                <p class="ai-sample-body">Your food expenses are 26% of this month's total. Try meal prepping twice a week — most people cut dining costs by 20–30% within the first month.</p>
+            </div>
+            <div class="ai-sample-card">
+                <div class="ai-sample-icon">◈</div>
+                <h3 class="ai-sample-heading">Stay Ahead on Bills</h3>
+                <p class="ai-sample-body">Bills remain your largest category this month. Setting a calendar reminder 5 days before due dates helps you avoid late fees and plan cash flow better.</p>
+            </div>
+            <div class="ai-sample-card">
+                <div class="ai-sample-icon">⬡</div>
+                <h3 class="ai-sample-heading">Optimize Transport</h3>
+                <p class="ai-sample-body">Transport costs have stayed stable across both months. Switching to a monthly metro pass or carpooling twice a week could save up to ₹600 each month.</p>
+            </div>
+        </div>
+        <div class="ai-showcase-cta">
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('suggestions') }}" class="btn-primary btn-lg">Get my AI suggestions</a>
+            {% else %}
+            <a href="{{ url_for('register') }}" class="btn-primary btn-lg">Try it free</a>
+            {% endif %}
+            <p class="ai-showcase-cta-note">Analyses your actual spending — no generic filler</p>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CTA (logged-out only)                                        -->
+<!-- ============================================================ -->
 {% if not session.get('user_id') %}
 <section class="cta-section">
     <div class="cta-inner">
         <h2 class="cta-title">Your finances deserve clarity</h2>
-        <p class="cta-body">Join thousands of people who track their expenses with Spendly.</p>
+        <p class="cta-body">Start logging today — it takes less than 30 seconds to set up.</p>
         <a href="{{ url_for('register') }}" class="btn-primary btn-lg">Create free account</a>
-        <p class="cta-note">Takes less than 30 seconds &middot; Always free</p>
+        <p class="cta-note">No credit card &middot; Always free &middot; Cancel anytime</p>
     </div>
 </section>
 {% endif %}
