@@ -421,9 +421,11 @@ def view_transactions():
         return redirect(url_for("login"))
 
     user_id = session['user_id']
+    PER_PAGE = 20
 
     raw_from = request.args.get("from_date", "").strip()
     raw_to   = request.args.get("to_date",   "").strip()
+    q        = request.args.get("q", "").strip() or None
 
     from_date = None
     to_date   = None
@@ -442,21 +444,39 @@ def view_transactions():
         except ValueError:
             pass
 
-    filter_active = bool(from_date or to_date)
+    filter_active = bool(from_date or to_date or q)
     transactions  = None
+    total         = 0
+    page          = 1
+    total_pages   = 1
 
     if from_date and to_date and from_date > to_date:
         flash("'From' date must be on or before 'To' date.", "error")
     else:
-        from database.db import get_filtered_transactions
-        transactions = get_filtered_transactions(user_id, from_date, to_date)
+        from database.db import get_filtered_transactions, count_filtered_transactions
+        total       = count_filtered_transactions(user_id, from_date, to_date, q)
+        total_pages = max(1, -(-total // PER_PAGE))  # ceil division
+
+        try:
+            page = int(request.args.get("page", 1))
+        except ValueError:
+            page = 1
+        page = max(1, min(page, total_pages))
+
+        offset       = (page - 1) * PER_PAGE
+        transactions = get_filtered_transactions(user_id, from_date, to_date, q, PER_PAGE, offset)
 
     return render_template(
         "view_transactions.html",
         transactions=transactions,
         from_date=from_date,
         to_date=to_date,
+        q=q,
         filter_active=filter_active,
+        page=page,
+        total_pages=total_pages,
+        total=total,
+        per_page=PER_PAGE,
     )
 
 

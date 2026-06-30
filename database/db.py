@@ -247,27 +247,46 @@ def get_all_user_transactions(user_id):
         conn.close()
 
 
-def get_filtered_transactions(user_id, from_date=None, to_date=None):
-    """Return expenses for user_id filtered by optional date bounds."""
+def _filtered_where(user_id, from_date, to_date, q):
+    conditions = ["user_id = ?"]
+    params = [user_id]
+    if from_date:
+        conditions.append("date >= ?")
+        params.append(from_date)
+    if to_date:
+        conditions.append("date <= ?")
+        params.append(to_date)
+    if q:
+        conditions.append("LOWER(description) LIKE ?")
+        params.append(f"%{q.lower()}%")
+    return " AND ".join(conditions), params
+
+
+def get_filtered_transactions(user_id, from_date=None, to_date=None, q=None, limit=20, offset=0):
+    """Return a page of expenses for user_id filtered by optional date bounds and keyword."""
     conn = get_db()
     try:
-        conditions = ["user_id = ?"]
-        params = [user_id]
-
-        if from_date:
-            conditions.append("date >= ?")
-            params.append(from_date)
-        if to_date:
-            conditions.append("date <= ?")
-            params.append(to_date)
-
-        where = " AND ".join(conditions)
+        where, params = _filtered_where(user_id, from_date, to_date, q)
         sql = (
             "SELECT * FROM expenses "
             "WHERE {} "
-            "ORDER BY date DESC, created_at DESC"
+            "ORDER BY date DESC, created_at DESC "
+            "LIMIT ? OFFSET ?"
         ).format(where)
-        return conn.execute(sql, params).fetchall()
+        return conn.execute(sql, params + [limit, offset]).fetchall()
+    finally:
+        conn.close()
+
+
+def count_filtered_transactions(user_id, from_date=None, to_date=None, q=None):
+    """Return total row count matching the given filters (for pagination)."""
+    conn = get_db()
+    try:
+        where, params = _filtered_where(user_id, from_date, to_date, q)
+        row = conn.execute(
+            f"SELECT COUNT(*) FROM expenses WHERE {where}", params
+        ).fetchone()
+        return row[0]
     finally:
         conn.close()
 
