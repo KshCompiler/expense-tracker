@@ -26,7 +26,7 @@
         {% else %}
         <div class="hero-actions">
             <a href="{{ url_for('dashboard') }}" class="btn-primary btn-lg">Go to dashboard</a>
-            <a href="{{ url_for('suggestions') }}" class="btn-ghost btn-lg">View AI suggestions</a>
+            <a href="{{ url_for('suggestions') }}" class="btn-ghost btn-lg">Chat with Sage</a>
         </div>
         {% endif %}
     </div>
@@ -82,7 +82,7 @@
             </div>
             <div class="mock-ai-hint">
                 <span class="mock-ai-dot"></span>
-                <span class="mock-ai-text">AI tip: Food spend up 18% vs last month</span>
+                <span class="mock-ai-text">Sage: Food spend up 18% vs last month</span>
             </div>
         </div>
     </div>
@@ -104,8 +104,8 @@
         </div>
         <div class="stat-divider"></div>
         <div class="stat-pill">
-            <span class="stat-pill-num">AI</span>
-            <span class="stat-pill-label">smart suggestions</span>
+            <span class="stat-pill-num">✦</span>
+            <span class="stat-pill-label">Sage AI assistant</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-pill">
@@ -153,8 +153,8 @@
                     </div>
                     <span class="feature-num">03</span>
                 </div>
-                <h3 class="feature-title">AI-powered advice</h3>
-                <p class="feature-body">Get personalised suggestions based on your actual numbers — not generic tips from the internet.</p>
+                <h3 class="feature-title">Meet Sage, your AI advisor</h3>
+                <p class="feature-body">Chat with Sage to get personalised insights based on your actual numbers — not generic tips from the internet.</p>
             </div>
         </div>
     </div>
@@ -189,8 +189,8 @@
             <div class="step">
                 <div class="step-number">3</div>
                 <div class="step-content">
-                    <h3 class="step-title">Get AI insights</h3>
-                    <p class="step-body">Spendly analyses two months of data and gives you concrete, actionable suggestions.</p>
+                    <h3 class="step-title">Chat with Sage</h3>
+                    <p class="step-body">Ask Sage anything — it analyses two months of your data and gives you concrete, actionable answers.</p>
                 </div>
             </div>
         </div>
@@ -203,37 +203,37 @@
 <section class="ai-showcase">
     <div class="ai-showcase-inner">
         <div class="ai-showcase-header">
-            <span class="ai-showcase-eyebrow">Powered by AI</span>
-            <h2 class="ai-showcase-heading">Smart advice, built from your real data</h2>
+            <span class="ai-showcase-eyebrow">Meet Sage</span>
+            <h2 class="ai-showcase-heading">Your AI finance assistant, always ready</h2>
             <p class="ai-showcase-subtitle">
-                Spendly analyses your spending patterns across two months and surfaces
-                personalised tips — not generic advice, but insights tied to your numbers.
+                Sage analyses your spending patterns across two months and answers your
+                questions in plain language — not generic advice, but insights tied to your actual numbers.
             </p>
         </div>
         <div class="ai-sample-grid">
             <div class="ai-sample-card">
                 <div class="ai-sample-icon">✦</div>
-                <h3 class="ai-sample-heading">Reduce Food Spend</h3>
-                <p class="ai-sample-body">Your food expenses are 26% of this month's total. Try meal prepping twice a week — most people cut dining costs by 20–30% within the first month.</p>
+                <h3 class="ai-sample-heading">"Where am I overspending?"</h3>
+                <p class="ai-sample-body">Food is 26% of your total this month — up from 19% last month. Try meal prepping twice a week; most users cut dining costs by 20–30% within the first month.</p>
             </div>
             <div class="ai-sample-card">
-                <div class="ai-sample-icon">◈</div>
-                <h3 class="ai-sample-heading">Stay Ahead on Bills</h3>
-                <p class="ai-sample-body">Bills remain your largest category this month. Setting a calendar reminder 5 days before due dates helps you avoid late fees and plan cash flow better.</p>
+                <div class="ai-sample-icon">✦</div>
+                <h3 class="ai-sample-heading">"Compare my last two months"</h3>
+                <p class="ai-sample-body">You spent ₹3,200 less in May than June. The biggest jump was Bills — up ₹900. Your savings rate dropped from 32% to 24% as a result.</p>
             </div>
             <div class="ai-sample-card">
-                <div class="ai-sample-icon">⬡</div>
-                <h3 class="ai-sample-heading">Optimize Transport</h3>
-                <p class="ai-sample-body">Transport costs have stayed stable across both months. Switching to a monthly metro pass or carpooling twice a week could save up to ₹600 each month.</p>
+                <div class="ai-sample-icon">✦</div>
+                <h3 class="ai-sample-heading">"How can I save more?"</h3>
+                <p class="ai-sample-body">Switching to a monthly metro pass and cutting one dining-out meal a week could free up ₹1,200/month — that's ₹14,400 extra saved by year end.</p>
             </div>
         </div>
         <div class="ai-showcase-cta">
             {% if session.get('user_id') %}
-            <a href="{{ url_for('suggestions') }}" class="btn-primary btn-lg">Get my AI suggestions</a>
+            <a href="{{ url_for('suggestions') }}" class="btn-primary btn-lg">Chat with Sage</a>
             {% else %}
             <a href="{{ url_for('register') }}" class="btn-primary btn-lg">Try it free</a>
             {% endif %}
-            <p class="ai-showcase-cta-note">Analyses your actual spending — no generic filler</p>
+            <p class="ai-showcase-cta-note">Answers based on your actual spending — not generic filler</p>
         </div>
     </div>
 </section>
