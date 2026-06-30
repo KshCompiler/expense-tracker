@@ -416,19 +416,48 @@ def add_expense():
 
 @app.route("/view_transactions")
 def view_transactions():
-    # Check if user is logged in
     if 'user_id' not in session:
         flash("Please log in to view transactions.", "error")
         return redirect(url_for("login"))
 
-    # Get user data
     user_id = session['user_id']
 
-    # Get all transactions using helper function
-    from database.db import get_all_user_transactions
-    transactions = get_all_user_transactions(user_id)
+    raw_from = request.args.get("from_date", "").strip()
+    raw_to   = request.args.get("to_date",   "").strip()
 
-    return render_template("view_transactions.html", transactions=transactions)
+    from_date = None
+    to_date   = None
+
+    if raw_from:
+        try:
+            datetime.strptime(raw_from, "%Y-%m-%d")
+            from_date = raw_from
+        except ValueError:
+            pass
+
+    if raw_to:
+        try:
+            datetime.strptime(raw_to, "%Y-%m-%d")
+            to_date = raw_to
+        except ValueError:
+            pass
+
+    filter_active = bool(from_date or to_date)
+    transactions  = None
+
+    if from_date and to_date and from_date > to_date:
+        flash("'From' date must be on or before 'To' date.", "error")
+    else:
+        from database.db import get_filtered_transactions
+        transactions = get_filtered_transactions(user_id, from_date, to_date)
+
+    return render_template(
+        "view_transactions.html",
+        transactions=transactions,
+        from_date=from_date,
+        to_date=to_date,
+        filter_active=filter_active,
+    )
 
 
 @app.route("/profile")
