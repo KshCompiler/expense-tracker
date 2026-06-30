@@ -47,44 +47,26 @@ def check_csrf():
 # AI suggestions helpers                                              #
 # ------------------------------------------------------------------ #
 
-def _build_suggestions_prompt(curr_month, curr_expenses, curr_income,
-                               prev_month, prev_expenses, prev_income):
-    def _fmt(rows):
-        if not rows:
-            return "No expenses recorded"
-        return ", ".join(f"{r['category']}: ₹{r['total']:.0f}" for r in rows)
+def _fmt_expenses(rows):
+    if not rows:
+        return "No expenses recorded"
+    return ", ".join(f"{r['category']}: ₹{r['total']:.0f}" for r in rows)
 
+
+def _build_chat_system_prompt(curr_month, curr_expenses, curr_income,
+                               prev_month, prev_expenses, prev_income):
     curr_label = datetime.strptime(curr_month, "%Y-%m").strftime("%B %Y")
     prev_label = datetime.strptime(prev_month, "%Y-%m").strftime("%B %Y")
 
     return (
-        "You are a personal finance advisor. Analyse the two-month spending summary "
-        "below and give this user 4 to 6 practical, specific suggestions.\n\n"
-        "Financial Summary:\n"
-        f"- {prev_label}: Income ₹{prev_income:.0f} | Expenses: {_fmt(prev_expenses)}\n"
-        f"- {curr_label}: Income ₹{curr_income:.0f} | Expenses: {_fmt(curr_expenses)}\n\n"
-        "Rules for your response:\n"
-        "1. Output exactly 4 to 6 suggestion blocks and nothing else.\n"
-        "2. Each block must follow this exact format:\n\n"
-        "### [Heading: 3 to 6 words]\n"
-        "[Body: 2 to 3 sentences of actionable advice tied to the numbers above.]\n\n"
-        "Do not include any introduction, conclusion, numbering, or extra commentary."
+        "You are a helpful personal finance assistant built into Spendly, an expense tracker app. "
+        "You have access to the user's real spending data shown below. Answer their questions "
+        "conversationally and concisely — 2 to 4 sentences max. Reference the actual numbers "
+        "when relevant. Use ₹ for currency. Never make up data not shown here.\n\n"
+        "User's Financial Data:\n"
+        f"- {prev_label}: Income ₹{prev_income:.0f} | Expenses: {_fmt_expenses(prev_expenses)}\n"
+        f"- {curr_label}: Income ₹{curr_income:.0f} | Expenses: {_fmt_expenses(curr_expenses)}"
     )
-
-
-def _parse_suggestions(text):
-    blocks = re.split(r"\n?###\s+", text.strip())
-    results = []
-    for block in blocks:
-        block = block.strip()
-        if not block:
-            continue
-        parts = block.split("\n", 1)
-        heading = parts[0].strip()
-        body = parts[1].strip() if len(parts) > 1 else ""
-        if heading and body:
-            results.append({"heading": heading, "body": body})
-    return results[:6]
 
 
 # ------------------------------------------------------------------ #
@@ -164,8 +146,8 @@ def login():
             session['user_email'] = user['email']
             session['user_full_name'] = user['full_name']
 
-            flash("Login successful! Redirecting to your dashboard...", "success")
-            return redirect(url_for("dashboard"))
+            flash("Login successful!", "success")
+            return redirect(url_for("landing"))
         else:
             flash("Invalid email or password!", "error")
             return render_template("login.html")
@@ -469,52 +451,20 @@ def suggestions():
     if "user_id" not in session:
         flash("Please log in to view suggestions.", "error")
         return redirect(url_for("login"))
-
-    user_id = session["user_id"]
-
-    try:
-        now = datetime.now()
-        curr_month = now.strftime("%Y-%m")
-        if now.month == 1:
-            prev_month = f"{now.year - 1}-12"
-        else:
-            prev_month = f"{now.year}-{now.month - 1:02d}"
-
-        from database.db import get_monthly_expense_summary, get_monthly_income_total
-
-        curr_expenses = get_monthly_expense_summary(user_id, curr_month)
-        curr_income   = get_monthly_income_total(user_id, curr_month)
-        prev_expenses = get_monthly_expense_summary(user_id, prev_month)
-        prev_income   = get_monthly_income_total(user_id, prev_month)
-
-        api_key = os.environ.get("XAI_API_KEY")
-        if not api_key:
-            raise ValueError("XAI_API_KEY environment variable is not set")
-
-        prompt = _build_suggestions_prompt(
-            curr_month, curr_expenses, curr_income,
-            prev_month, prev_expenses, prev_income,
-        )
-
-        client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
-        response = client.chat.completions.create(
-            model="grok-3-mini",
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw_text = response.choices[0].message.content
-        suggestion_list = _parse_suggestions(raw_text)
-
-        return render_template("suggestions.html", suggestions=suggestion_list, error=False)
-
-    except Exception as e:
-        app.logger.error("Suggestions error: %s", e, exc_info=True)
-        return render_template("suggestions.html", suggestions=[], error=True)
+    return render_template("suggestions.html")
 
 
-@app.route("/api/suggestions")
-def api_suggestions():
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(silent=True) or {}
+    user_message = data.get("message", "").strip()
+    history = data.get("history", [])
+
+    if not user_message:
+        return jsonify({"error": "Empty message"}), 400
 
     user_id = session["user_id"]
     try:
@@ -523,32 +473,39 @@ def api_suggestions():
         prev_month = f"{now.year - 1}-12" if now.month == 1 else f"{now.year}-{now.month - 1:02d}"
 
         from database.db import get_monthly_expense_summary, get_monthly_income_total
-
         curr_expenses = get_monthly_expense_summary(user_id, curr_month)
         curr_income   = get_monthly_income_total(user_id, curr_month)
         prev_expenses = get_monthly_expense_summary(user_id, prev_month)
         prev_income   = get_monthly_income_total(user_id, prev_month)
 
-        api_key = os.environ.get("XAI_API_KEY")
+        api_key = os.environ.get("GROQ_API_KEY")
         if not api_key:
-            raise ValueError("XAI_API_KEY not set")
+            raise ValueError("GROQ_API_KEY not set")
 
-        prompt = _build_suggestions_prompt(
+        system_prompt = _build_chat_system_prompt(
             curr_month, curr_expenses, curr_income,
             prev_month, prev_expenses, prev_income,
         )
 
-        client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+        messages = [{"role": "system", "content": system_prompt}]
+        for turn in history[-10:]:
+            if turn.get("role") in ("user", "assistant") and turn.get("content"):
+                messages.append({"role": turn["role"], "content": turn["content"]})
+        messages.append({"role": "user", "content": user_message})
+
+        client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
         response = client.chat.completions.create(
-            model="grok-3-mini",
-            messages=[{"role": "user", "content": prompt}],
+            model="llama-3.1-8b-instant",
+            messages=messages,
         )
-        suggestion_list = _parse_suggestions(response.choices[0].message.content)
-        return jsonify({"suggestions": [{"heading": s["heading"], "body": s["body"]} for s in suggestion_list]})
+        reply = response.choices[0].message.content.strip()
+        return jsonify({"reply": reply})
 
     except Exception as e:
-        app.logger.error("API suggestions error: %s", e, exc_info=True)
-        return jsonify({"error": "Failed to generate suggestions"}), 500
+        app.logger.error("Chat error: %s", e, exc_info=True)
+        return jsonify({"error": "Failed to get a response"}), 500
+
+
 
 
 if __name__ == "__main__":

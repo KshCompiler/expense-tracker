@@ -1,67 +1,67 @@
-# Spec: AI Smart Spending Suggestions
+# Spec: AI Finance Chat Assistant
 
 ## Overview
-Add a dedicated "Smart Suggestions" page that calls the Claude API server-side with the user's real financial data (current and prior month expenses, income, and per-category totals) and renders personalised, actionable spending tips. The route fetches data from the existing `expenses` and `income` tables, assembles a structured prompt, sends it to Claude, and displays the response as a clean card-based layout. This is the first AI-powered feature in Spendly and sits naturally after all core data-entry steps are complete, giving the user meaningful value derived from the data they have already entered.
+Replace the original card-based "Smart Suggestions" page with a conversational chat interface. Users can ask free-form questions about their spending (e.g. "Where am I spending the most?", "How can I save money?") and get concise, data-grounded responses. The AI receives the user's last two months of real financial data as a system prompt on every message, and the client maintains conversation history so follow-up questions work naturally. This replaces the one-shot suggestion dump with an interactive experience that users actually engage with.
 
 ## Depends on
 - Step 01 (users table and session management)
-- Step 02 (login — user must be authenticated to access suggestions)
+- Step 02 (login — user must be authenticated)
 - Step 03 (expenses table and `add_expense` — spending data must exist)
 - Step 06 (add income — income data required for budget-vs-spend analysis)
 
 ## Routes
-- `GET /suggestions` — render the Smart Suggestions page; calls Claude API and passes results to template — logged-in only
+- `GET /suggestions` — render the Finance Chat page (no AI call on page load) — logged-in only
+- `POST /api/chat` — accepts `{message: str, history: [{role, content}]}`, fetches the user's financial data, calls the Groq/LLM API with full conversation context, returns `{reply: str}` — logged-in only
 
 ## Database changes
-No database changes. The feature reads from the existing `expenses` and `income` tables using already-implemented helpers and two new read-only helpers added to `database/db.py`.
+No database changes. Reads from existing `expenses` and `income` tables via `get_monthly_expense_summary` and `get_monthly_income_total` helpers.
 
 ## Templates
-- **Create:** `templates/suggestions.html`
+- **Rewrite:** `templates/suggestions.html`
   - Extends `base.html`
-  - Shows a "Smart Suggestions" heading and a brief intro sentence
-  - Renders each suggestion as a card (icon + heading + body text)
-  - Shows a loading state message while the server fetches the response (handled server-side; page renders only after the API call returns)
-  - If the API call fails, displays a friendly error message with a "Try again" link
-- **Modify:** `templates/dashboard.html`
-  - Add a "Get Smart Suggestions" button/link pointing to `url_for('suggestions')`
+  - Full-height chat layout: scrollable message list + sticky input form at bottom
+  - Initial AI greeting message rendered on page load (no API call)
+  - Four starter question chips ("Where am I spending the most?", "Compare my last two months", "How can I save money?", "Am I overspending?") — hidden after the first message is sent
+  - User messages aligned right (accent background), AI messages aligned left (card background)
+  - Animated typing indicator (three bouncing dots) shown while waiting for API response
+  - Input disabled during in-flight requests to prevent double-sends
+  - Conversation history kept client-side in a JS array and sent with each request
+  - HTML-escapes all AI output before rendering (no `innerHTML` with raw API text)
 
-## Files to change
-- `app.py` — add `/suggestions` route
-- `database/db.py` — add `get_monthly_expense_summary(user_id, year_month)` and `get_monthly_income_total(user_id, year_month)` helpers
-- `templates/dashboard.html` — add "Get Smart Suggestions" link
-- `static/css/style.css` — add styles for `.suggestions-card`, `.suggestions-grid`, `.suggestions-error`; CSS variables only
-- `requirements.txt` — add `anthropic`
+## Files changed
+- `app.py`
+  - Added `_fmt_expenses(rows)` helper
+  - Added `_build_chat_system_prompt(...)` — injects 2-month financial summary as system context; instructs AI to respond in 2–4 sentences, reference real numbers, use ₹
+  - Added `POST /api/chat` route — validates session, fetches fresh financial data, builds messages array (system + capped history + new user turn), calls LLM, returns `{reply}`
+  - Simplified `GET /suggestions` to just render the template (AI no longer called on page load)
+  - Removed `_build_suggestions_prompt`, `_parse_suggestions`, and `GET /api/suggestions`
+- `templates/suggestions.html` — full rewrite as chat UI (see Templates above)
+- `static/css/style.css` — old `.suggestions-card` / `.suggestions-grid` styles remain but are unused; new chat styles live inline in the template
 
-## Files to create
-- `templates/suggestions.html`
-
-## New dependencies
-- `anthropic` — official Anthropic Python SDK for calling the Claude API
+## AI integration
+- Provider: Groq (OpenAI-compatible SDK), key from `GROQ_API_KEY` env var
+- Model: `llama-3.1-8b-instant`
+- System prompt built fresh on every `/api/chat` request with current financial data
+- Up to 10 previous turns sent as history to support follow-up questions
+- On exception: return `{"error": "Failed to get a response"}` with HTTP 500 — client shows a friendly fallback message
 
 ## Rules for implementation
-- No SQLAlchemy or ORMs
-- Parameterised queries only
-- Passwords hashed with werkzeug (not touched by this step)
+- No SQLAlchemy or ORMs; parameterised queries only
 - Use CSS variables — never hardcode hex values
 - All templates extend `base.html`
-- Use `url_for()` for all links — never hardcode URLs
+- Use `url_for()` for all links — no hardcoded URLs
 - No JS frameworks — vanilla JS only
-- The Claude API key must be read from the `ANTHROPIC_API_KEY` environment variable; never hardcode it
-- Use `anthropic.Anthropic()` client with `client.messages.create()`
-- Model: `claude-haiku-4-5-20251001` — fast and cost-effective for structured financial summaries
-- Send a structured system prompt that instructs Claude to return exactly 4–6 numbered suggestions, each with a one-line heading and 2–3 sentence explanation, plain text only (no markdown, no bullet symbols)
-- Parse Claude's plain-text response in the route and split it into individual suggestion objects `{heading, body}` before passing to the template
-- If `ANTHROPIC_API_KEY` is not set or the API call raises an exception, catch it and pass `error=True` to the template — never let the exception propagate to a 500
-- The `/suggestions` route must redirect to `/login` if the user is not authenticated
-- Do not cache suggestions between requests — always generate fresh advice
+- API key read from `GROQ_API_KEY` environment variable; never hardcoded
+- Escape all AI output with `escapeHtml()` before inserting into DOM
 
 ## Definition of done
-- [ ] Navigating to `/suggestions` while logged out redirects to `/login`
-- [ ] Navigating to `/suggestions` while logged in shows the "Smart Suggestions" page without a 500 error
-- [ ] The page displays 4–6 suggestion cards, each with a heading and explanation
-- [ ] Suggestion content references the user's actual spending categories or amounts (not generic filler)
-- [ ] If `ANTHROPIC_API_KEY` is missing or invalid, the page shows a friendly error message instead of a traceback
-- [ ] The dashboard has a visible link/button to `/suggestions`
-- [ ] No hardcoded hex colours — all colours use CSS variables
-- [ ] All links use `url_for()` — no hardcoded URLs
-- [ ] `anthropic` is listed in `requirements.txt`
+- [x] Navigating to `/suggestions` while logged out redirects to `/login`
+- [x] Navigating to `/suggestions` while logged in shows the chat page instantly (no AI call on page load)
+- [x] Sending a message calls `/api/chat` and renders the AI reply as a chat bubble
+- [x] Starter chips send a pre-filled question and hide themselves after first use
+- [x] Typing indicator appears while the API call is in flight
+- [x] Conversation history is maintained — follow-up questions have context
+- [x] AI responses reference the user's actual spending numbers (not generic filler)
+- [x] If `GROQ_API_KEY` is missing or the API errors, a friendly fallback message appears in the chat
+- [x] No hardcoded hex colours — all colours use CSS variables
+- [x] All links use `url_for()` — no hardcoded URLs
