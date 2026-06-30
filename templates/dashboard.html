@@ -322,7 +322,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 200px;
+        max-width: clamp(120px, 35vw, 220px);
     }
 
     .db-txn-meta {
@@ -373,9 +373,20 @@
     }
 
     @media (max-width: 520px) {
-        .db-wrap { padding: 1.25rem 1rem 3rem; }
-        .db-stats { grid-template-columns: 1fr 1fr; }
-        .db-welcome { flex-direction: column; align-items: flex-start; }
+        .db-wrap        { padding: 1rem 0.875rem 3rem; gap: 1rem; }
+        .db-stats       { grid-template-columns: 1fr 1fr; }
+        .db-welcome     { flex-direction: column; align-items: flex-start; padding: 1.25rem 1.25rem; }
+        .db-action-group { width: 100%; flex-direction: row; }
+        .db-add-btn      { flex: 1; justify-content: center; font-size: 0.8rem; padding: 0.6rem 0.75rem; }
+        .db-chart-card,
+        .db-txn-card    { padding: 1.1rem; }
+        .db-stat        { padding: 1rem 1.1rem; }
+    }
+
+    @media (max-width: 380px) {
+        .db-stats { grid-template-columns: 1fr; }
+        .db-action-group { flex-direction: column; }
+        .db-add-btn { width: 100%; }
     }
 
     /* ── AI Suggestions FAB ── */
