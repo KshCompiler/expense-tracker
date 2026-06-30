@@ -29,7 +29,6 @@
                             <div class="npp-avatar">{{ session['user_full_name'][0] | upper }}</div>
                             <div class="npp-name">{{ session['user_full_name'] }}</div>
                             <div class="npp-email">{{ session['user_email'] }}</div>
-                            <a href="{{ url_for('suggestions') }}" class="npp-suggestions">&#10022; Smart Suggestions</a>
                             <a href="{{ url_for('logout') }}" class="npp-signout">Sign out</a>
                         </div>
                     </div>

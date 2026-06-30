@@ -1,11 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
 from database.db import get_db, init_db, close_db, create_user, get_user_by_email
 from werkzeug.security import check_password_hash
+from dotenv import load_dotenv
 import os
 import re
 import secrets
 from datetime import datetime
-import anthropic
+from openai import OpenAI
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-change-in-production'  # Needed for flash messages
@@ -484,28 +487,68 @@ def suggestions():
         prev_expenses = get_monthly_expense_summary(user_id, prev_month)
         prev_income   = get_monthly_income_total(user_id, prev_month)
 
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        api_key = os.environ.get("XAI_API_KEY")
         if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
+            raise ValueError("XAI_API_KEY environment variable is not set")
 
         prompt = _build_suggestions_prompt(
             curr_month, curr_expenses, curr_income,
             prev_month, prev_expenses, prev_income,
         )
 
-        client = anthropic.Anthropic(api_key=api_key)
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=1024,
+        client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+        response = client.chat.completions.create(
+            model="grok-3-mini",
             messages=[{"role": "user", "content": prompt}],
         )
-        raw_text = message.content[0].text
+        raw_text = response.choices[0].message.content
         suggestion_list = _parse_suggestions(raw_text)
 
         return render_template("suggestions.html", suggestions=suggestion_list, error=False)
 
-    except Exception:
+    except Exception as e:
+        app.logger.error("Suggestions error: %s", e, exc_info=True)
         return render_template("suggestions.html", suggestions=[], error=True)
+
+
+@app.route("/api/suggestions")
+def api_suggestions():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    try:
+        now = datetime.now()
+        curr_month = now.strftime("%Y-%m")
+        prev_month = f"{now.year - 1}-12" if now.month == 1 else f"{now.year}-{now.month - 1:02d}"
+
+        from database.db import get_monthly_expense_summary, get_monthly_income_total
+
+        curr_expenses = get_monthly_expense_summary(user_id, curr_month)
+        curr_income   = get_monthly_income_total(user_id, curr_month)
+        prev_expenses = get_monthly_expense_summary(user_id, prev_month)
+        prev_income   = get_monthly_income_total(user_id, prev_month)
+
+        api_key = os.environ.get("XAI_API_KEY")
+        if not api_key:
+            raise ValueError("XAI_API_KEY not set")
+
+        prompt = _build_suggestions_prompt(
+            curr_month, curr_expenses, curr_income,
+            prev_month, prev_expenses, prev_income,
+        )
+
+        client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+        response = client.chat.completions.create(
+            model="grok-3-mini",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        suggestion_list = _parse_suggestions(response.choices[0].message.content)
+        return jsonify({"suggestions": [{"heading": s["heading"], "body": s["body"]} for s in suggestion_list]})
+
+    except Exception as e:
+        app.logger.error("API suggestions error: %s", e, exc_info=True)
+        return jsonify({"error": "Failed to generate suggestions"}), 500
 
 
 if __name__ == "__main__":

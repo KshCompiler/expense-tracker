@@ -286,6 +286,68 @@
         .db-stats { grid-template-columns: 1fr 1fr; }
         .db-welcome { flex-direction: column; align-items: flex-start; }
     }
+
+    /* ── AI Suggestions FAB ── */
+    .ai-fab-wrap {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+    }
+
+    .ai-fab-tooltip {
+        display: flex;
+        flex-direction: column;
+        background: var(--ink);
+        color: var(--paper);
+        padding: 0.45rem 0.8rem;
+        border-radius: var(--radius-sm);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s ease, transform 0.18s ease;
+        transform: translateX(6px);
+        text-align: right;
+    }
+
+    .ai-fab-wrap:hover .ai-fab-tooltip {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .ai-fab-tooltip-title {
+        font-size: 0.78rem;
+        font-weight: 600;
+        white-space: nowrap;
+        line-height: 1.3;
+    }
+
+    .ai-fab-tooltip-desc {
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.65);
+        white-space: nowrap;
+        line-height: 1.3;
+    }
+
+    .ai-fab {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: var(--ink);
+        color: var(--paper);
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+        transition: background 0.2s, transform 0.18s;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+
+    .ai-fab:hover { background: var(--accent); transform: scale(1.1); }
 </style>
 {% endblock %}
 
@@ -386,6 +448,15 @@
 
     </div>
 
+</div>
+
+<!-- AI Smart Suggestions FAB -->
+<div class="ai-fab-wrap">
+    <div class="ai-fab-tooltip">
+        <span class="ai-fab-tooltip-title">Smart Suggestions</span>
+        <span class="ai-fab-tooltip-desc">AI tips to improve your spending</span>
+    </div>
+    <a href="{{ url_for('suggestions') }}" class="ai-fab" aria-label="Smart Spending Suggestions">✦</a>
 </div>
 
 {% endblock %}
