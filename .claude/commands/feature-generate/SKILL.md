@@ -1,131 +1,324 @@
 ---
+
 description: Create a spec file and feature branch for the next Spendly step
 argument-hint: "Step number and feature name e.g. 2 registration"
 allowed-tools: Read, Write, Glob, Bash(git:*)
----
+---------------------------------------------
 
-You are a senior developer spinning up a new feature for the
-Spendly expense tracker. Always follow the rules in CLAUDE.md.
+You are a senior developer spinning up a new feature for the Spendly expense tracker. Always follow the rules in `CLAUDE.md`.
 
-User input: $ARGUMENTS
+User input: `$ARGUMENTS`
 
 ## Step 1 — Check working directory is clean
-Run `git status` and check for uncommitted, unstaged, or
-untracked files. If any exist, stop immediately and tell
-the user to commit or stash changes before proceeding.
-DO NOT CONTINUE until the working directory is clean.
+
+Run `git status` and check for uncommitted, unstaged, or untracked files.
+
+If any exist, stop immediately and tell the user to commit or stash changes before proceeding.
+
+**DO NOT CONTINUE** until the working directory is clean.
+
+---
 
 ## Step 2 — Parse the arguments
-From $ARGUMENTS extract:
 
-1. `step_number` — zero-padded to 2 digits: 2 → 02, 11 → 11
+From `$ARGUMENTS` extract:
 
-2. `feature_title` — human readable title in Title Case
-   - Example: "Registration" or "Login and Logout"
+1. `step_number`
 
-3. `feature_slug` — git and file safe slug
-   - Lowercase, kebab-case
-   - Only a-z, 0-9 and -
-   - Maximum 40 characters
-   - Example: registration, login-logout
+   * Zero-pad to 2 digits.
+   * Example:
 
-4. `branch_name` — format: `feature/<feature_slug>`
-   - Example: `feature/registration`
+     * `2 → 02`
+     * `11 → 11`
 
-If you cannot infer these from $ARGUMENTS, ask the user
-to clarify before proceeding.
+2. `feature_title`
 
-## Step 3 — Check branch name is not taken
-Run `git branch` to list existing branches.
-If `branch_name` is already taken, append a number:
-`feature/registration-01`, `feature/registration-02` etc.
+   * Human-readable title in Title Case.
+   * Examples:
 
-## Step 4 — Switch to main and pull latest
-Run:
+     * Registration
+     * Login and Logout
+
+3. `feature_slug`
+
+   * Git and filename safe.
+   * Lowercase kebab-case.
+   * Only:
+
+     * a-z
+     * 0-9
+     * `-`
+   * Maximum 40 characters.
+   * Examples:
+
+     * registration
+     * login-logout
+
+4. `branch_name`
+   Format:
+
+   ```
+   feature/<feature_slug>
+   ```
+
+   Example:
+
+   ```
+   feature/registration
+   ```
+
+If these cannot be inferred from `$ARGUMENTS`, ask the user for clarification before proceeding.
+
+---
+## Step 2.5 — Rename the Claude session
+
+Immediately after successfully parsing the feature information, rename the current Claude session before performing any Git operations or writing the spec.
+
+Use the following format for the session title:
+
 ```
+Spendly – <feature_title>
+```
+
+Examples:
+
+* Spendly – Registration
+* Spendly – Login
+* Spendly – Login and Logout
+* Spendly – Dashboard
+* Spendly – Expense Management
+
+This step must be performed automatically every time this skill is activated.
+
+If the environment does not support automatically renaming the current Claude session, inform the user that the session could not be renamed and continue with the remaining steps without failing the workflow.
+
+## Step 3 — Check branch name
+
+Run:
+
+```
+git branch
+```
+
+If the desired branch already exists, append a number:
+
+```
+feature/registration-01
+feature/registration-02
+...
+```
+
+---
+
+## Step 4 — Update main
+
+Run:
+
+```bash
 git checkout main
 git pull origin main
 ```
 
-## Step 5 — Create and switch to the feature branch
+---
+
+## Step 5 — Create feature branch
+
 Run:
-```
+
+```bash
 git checkout -b <branch_name>
 ```
 
+---
+
 ## Step 6 — Research the codebase
+
 Read these files before writing the spec:
-- `CLAUDE.md` — roadmap, conventions, schema
-- `app.py` — existing routes and structure
-- `database/db.py` — existing schema and functions
-- All files in `.claude/specs/` — avoid duplicating existing specs
 
-Check `CLAUDE.md` to confirm the requested step is not already
-marked complete. If it is, warn the user and stop.
+* `CLAUDE.md`
+* `app.py`
+* `database/db.py`
+* Every file inside `.claude/specs/`
 
-## Step 7 — Write the spec
-Generate a spec document with this exact structure:
+Use them to:
+
+* Understand the roadmap.
+* Follow existing conventions.
+* Avoid duplicate specs.
+* Verify the current database schema.
+
+Check `CLAUDE.md` to confirm the requested step is **not already completed**.
+
+If it is already marked complete:
+
+* Warn the user.
+* Stop immediately.
 
 ---
+
+## Step 7 — Write the spec
+
+Generate a spec document with **this exact structure**.
+
+---
+
 # Spec: <feature_title>
 
 ## Overview
-One paragraph describing what this feature does and why
-it exists at this stage of the Spendly roadmap.
+
+One paragraph describing what this feature does and why it exists at this stage of the Spendly roadmap.
 
 ## Depends on
-Which previous steps this feature requires to be complete.
+
+Which previous steps this feature requires.
 
 ## Routes
-Every new route needed:
-- `METHOD /path` — description — access level (public/logged-in)
 
-If no new routes: state "No new routes".
+List every new route.
+
+Format:
+
+* `METHOD /path` — description — access level
+
+Access level:
+
+* Public
+* Logged-in
+
+If none:
+
+```
+No new routes.
+```
 
 ## Database changes
-Any new tables, columns, or constraints needed.
-Always verify against `database/db.py` before writing this.
-If none: state "No database changes".
+
+Verify against `database/db.py`.
+
+Describe:
+
+* New tables
+* New columns
+* Constraints
+* Indexes
+
+If none:
+
+```
+No database changes.
+```
 
 ## Templates
-- **Create:** list new templates with their path
-- **Modify:** list existing templates and what changes
+
+### Create
+
+List every new template.
+
+### Modify
+
+List every existing template and explain the required changes.
 
 ## Files to change
-Every file that will be modified.
+
+Every existing file that must be modified.
 
 ## Files to create
-Every new file that will be created.
+
+Every new file required.
 
 ## New dependencies
-Any new pip packages. If none: state "No new dependencies".
+
+List any required pip packages.
+
+If none:
+
+```
+No new dependencies.
+```
 
 ## Rules for implementation
-Specific constraints Claude must follow. Always include:
-- No SQLAlchemy or ORMs
-- Parameterised queries only
-- Passwords hashed with werkzeug
-- Use CSS variables — never hardcode hex values
-- All templates extend `base.html`
+
+Claude **must always** follow these rules:
+
+### Backend
+
+* No SQLAlchemy or any ORM.
+* Use SQLite with parameterised queries only.
+* Passwords must always be hashed using `werkzeug.security`.
+* Reuse existing helper functions whenever possible.
+* Keep code modular and maintainable.
+
+### Frontend
+
+* All templates must extend `base.html`.
+* Use CSS variables only. Never hardcode hex color values.
+* Build every page as production-ready, not as a prototype.
+* Follow modern SaaS dashboard design principles inspired by products like Stripe, Notion, GitHub, Vercel, and Linear.
+* Every page must have a clean, attractive, responsive, and professional UI.
+* Maintain consistent spacing, typography, colors, border radius, shadows, and component styling throughout the application.
+* Use reusable UI components whenever possible.
+
+### Layout & Responsiveness
+
+* Every page must remain visually appealing regardless of how much content is displayed.
+* Design layouts to scale for future growth.
+* Assume pages may eventually contain hundreds or thousands of records.
+* Never place large amounts of content directly onto the page without proper structure.
+* Use responsive containers, cards, grids, sections, and spacing.
+* Tables must be responsive and support scrolling or pagination where appropriate.
+* Long lists should remain readable and well-organized.
+* Forms should have proper spacing and alignment.
+* Ensure all pages work well on desktop, tablet, and mobile devices.
+
+### User Experience
+
+* Use modern UI patterns where appropriate:
+
+  * Cards
+  * Dashboards
+  * Search bars
+  * Filters
+  * Pagination
+  * Empty states
+  * Loading states
+  * Confirmation dialogs
+  * Success/error notifications
+  * Responsive tables
+  * Well-designed forms
+* Forms should include clear validation messages.
+* Avoid cluttered interfaces.
+* Prioritize readability, accessibility, and usability.
+* If a page displays data, design it so future additions do not require redesigning the layout.
+* Every new page should feel polished and production-ready.
 
 ## Definition of done
-A specific testable checklist. Each item must be
-something that can be verified by running the app.
+
+Provide a checklist where every item can be verified by running the application.
+
 ---
 
 ## Step 8 — Save the spec
-Save to: `.claude/specs/<step_number>-<feature_slug>.md`
 
-## Step 9 — Report to the user
-Print a short summary in this exact format:
+Save the generated spec to:
+
+```
+.claude/specs/<step_number>-<feature_slug>.md
+```
+
+---
+
+## Step 9 — Report
+
+Print **only** this summary:
+
 ```
 Branch:    <branch_name>
 Spec file: .claude/specs/<step_number>-<feature_slug>.md
 Title:     <feature_title>
 ```
 
-Then tell the user:
-"Review the spec at `.claude/specs/<step_number>-<feature_slug>.md`
-then enter Plan Mode with Shift+Tab twice to begin implementation."
+Then print:
 
-Do not print the full spec in chat unless explicitly asked.
+> Review the spec at `.claude/specs/<step_number>-<feature_slug>.md` then enter Plan Mode with Shift+Tab twice to begin implementation.
+
+Do **not** print the full spec in chat unless explicitly asked.
