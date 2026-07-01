@@ -397,3 +397,45 @@ def get_monthly_income_total(user_id, year_month):
         return float(row["total"]) if row else 0.0
     finally:
         conn.close()
+
+
+def get_monthly_expense_totals(user_id, months=6):
+    """Return monthly expense totals for the last `months` calendar months.
+
+    Each entry: {'year_month': 'YYYY-MM', 'label': 'Mon', 'total': float}.
+    Oldest month first, current month last. Months with no expenses come
+    back as 0.0 so the series has no gaps.
+    """
+    now = datetime.now()
+
+    keys = []
+    for i in range(months - 1, -1, -1):
+        total_months = (now.year * 12 + (now.month - 1)) - i
+        year, month = divmod(total_months, 12)
+        month += 1
+        keys.append(f"{year:04d}-{month:02d}")
+
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            """
+            SELECT strftime('%Y-%m', date) AS ym, SUM(amount) AS total
+            FROM expenses
+            WHERE user_id = ? AND date >= ?
+            GROUP BY ym
+            """,
+            (user_id, f"{keys[0]}-01"),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    totals_by_key = {row["ym"]: float(row["total"]) for row in rows}
+
+    return [
+        {
+            "year_month": key,
+            "label": datetime.strptime(key, "%Y-%m").strftime("%b"),
+            "total": totals_by_key.get(key, 0.0),
+        }
+        for key in keys
+    ]

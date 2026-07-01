@@ -366,6 +366,127 @@
         font-size: 0.9rem;
     }
 
+    /* ── Spending trend card ── */
+    .db-trend-card {
+        background: var(--paper-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+    }
+
+    .db-trend-header {
+        align-items: flex-start;
+    }
+
+    .db-trend-subtitle {
+        font-size: 0.8rem;
+        color: var(--ink-faint);
+        margin-top: 0.2rem;
+    }
+
+    .db-trend-header-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.2rem;
+    }
+
+    .db-trend-delta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .db-trend-delta.up   { color: var(--danger); }
+    .db-trend-delta.down { color: var(--accent); }
+    .db-trend-delta.flat { color: var(--ink-faint); }
+
+    .db-trend-svg-wrap {
+        width: 100%;
+    }
+
+    .db-trend-svg-wrap svg {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .db-trend-bar {
+        fill: var(--accent);
+        opacity: 0.4;
+        transition: opacity 0.2s;
+        transform-box: fill-box;
+        transform-origin: bottom;
+        animation: db-trend-grow 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+        cursor: default;
+    }
+
+    .db-trend-bar:hover {
+        opacity: 0.7;
+    }
+
+    .db-trend-bar.is-current {
+        fill: var(--accent-2);
+        opacity: 1;
+    }
+
+    .db-trend-bar.is-current:hover {
+        opacity: 0.88;
+    }
+
+    @keyframes db-trend-grow {
+        from { transform: scaleY(0); }
+        to   { transform: scaleY(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .db-trend-bar { animation: none; }
+    }
+
+    /* Hollow marker for a month with no spending — keeps the six-month row intact */
+    .db-trend-zero-dot {
+        fill: var(--paper-card);
+        stroke: var(--border);
+        stroke-width: 1.5;
+    }
+
+    /* Stamped chip + brand mark that calls out the current month, echoing the nav brand icon */
+    .db-trend-chip {
+        fill: var(--accent-2-light);
+    }
+
+    .db-trend-diamond {
+        font-size: 9px;
+        fill: var(--accent-2);
+        text-anchor: middle;
+    }
+
+    .db-trend-value {
+        font-size: 10px;
+        font-variant-numeric: tabular-nums;
+        fill: var(--ink-faint);
+        text-anchor: middle;
+    }
+
+    .db-trend-value.is-current {
+        fill: var(--accent-2);
+        font-weight: 700;
+    }
+
+    .db-trend-label {
+        font-size: 11px;
+        fill: var(--ink-faint);
+        text-anchor: middle;
+        font-family: var(--font-body);
+    }
+
+    .db-trend-label.is-current {
+        fill: var(--ink);
+        font-weight: 600;
+    }
+
     /* ── Responsive ── */
     @media (max-width: 860px) {
         .db-stats { grid-template-columns: repeat(2, 1fr); }
@@ -379,7 +500,8 @@
         .db-action-group { width: 100%; flex-direction: row; }
         .db-add-btn      { flex: 1; justify-content: center; font-size: 0.8rem; padding: 0.6rem 0.75rem; }
         .db-chart-card,
-        .db-txn-card    { padding: 1.1rem; }
+        .db-txn-card,
+        .db-trend-card  { padding: 1.1rem; }
         .db-stat        { padding: 1rem 1.1rem; }
     }
 
@@ -589,6 +711,52 @@
             {% endif %}
         </div>
 
+    </div>
+
+    <!-- Spending Trend -->
+    <div class="db-trend-card">
+        <div class="db-chart-header db-trend-header">
+            <div>
+                <span class="db-section-title">Spending Trend</span>
+                <p class="db-trend-subtitle">Total expenses per month, last 6 months</p>
+            </div>
+            {% if trend_chart.has_data %}
+            <div class="db-trend-header-right">
+                <span class="db-chart-total">₹{{ "%.0f"|format(trend_chart.current_total) }}</span>
+                {% if trend_chart.delta_pct is not none %}
+                <span class="db-trend-delta {{ trend_chart.trend_direction }}">
+                    {% if trend_chart.trend_direction == 'up' %}▲{% elif trend_chart.trend_direction == 'down' %}▼{% else %}—{% endif %}
+                    {{ "%.0f"|format(trend_chart.delta_pct) }}% vs last month
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% if trend_chart.has_data %}
+        <div class="db-trend-svg-wrap">
+            <svg viewBox="0 0 {{ trend_chart.width }} {{ trend_chart.height }}" preserveAspectRatio="none">
+                {% for gy in trend_chart.gridlines %}
+                <line x1="0" y1="{{ gy }}" x2="{{ trend_chart.width }}" y2="{{ gy }}" stroke="var(--border-soft)" stroke-width="1" stroke-dasharray="3 4"></line>
+                {% endfor %}
+                <line x1="0" y1="{{ trend_chart.baseline }}" x2="{{ trend_chart.width }}" y2="{{ trend_chart.baseline }}" stroke="var(--border)" stroke-width="1.25"></line>
+                {% for b in trend_chart.bars %}
+                {% if b.is_zero %}
+                <circle class="db-trend-zero-dot" cx="{{ b.label_x }}" cy="{{ trend_chart.baseline }}" r="3"><title>{{ b.title }}</title></circle>
+                {% else %}
+                <path class="db-trend-bar{{ ' is-current' if b.is_current else '' }}" d="{{ b.path }}" style="animation-delay: {{ b.delay }}s"><title>{{ b.title }}</title></path>
+                {% if b.is_current %}
+                <rect class="db-trend-chip" x="{{ b.chip_x }}" y="{{ b.chip_y }}" width="{{ b.chip_width }}" height="16" rx="8"></rect>
+                <text class="db-trend-diamond" x="{{ b.label_x }}" y="{{ b.diamond_y }}">◈</text>
+                {% endif %}
+                <text class="db-trend-value{{ ' is-current' if b.is_current else '' }}" x="{{ b.label_x }}" y="{{ b.value_y }}">{{ b.display_total }}</text>
+                {% endif %}
+                <text class="db-trend-label{{ ' is-current' if b.is_current else '' }}" x="{{ b.label_x }}" y="{{ b.label_y }}">{{ b.label }}</text>
+                {% endfor %}
+            </svg>
+        </div>
+        {% else %}
+        <div class="db-empty">Not enough spending history yet.</div>
+        {% endif %}
     </div>
 
 </div>
