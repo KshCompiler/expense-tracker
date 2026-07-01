@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from datetime import datetime
 
 from werkzeug.security import generate_password_hash
 
@@ -93,34 +94,44 @@ def seed_db():
     )
     user_id = cursor.lastrowid
 
+    # Build dates relative to today so the demo data always includes the
+    # current month, instead of drifting stale as real time passes.
+    now = datetime.now()
+
+    def month_date(months_ago, day):
+        total = (now.year * 12 + (now.month - 1)) - months_ago
+        year, month = divmod(total, 12)
+        month += 1
+        return f"{year:04d}-{month:02d}-{day:02d}"
+
     expenses = [
-        # April 2026
-        (user_id, 450.00,  "Food",          "2026-04-01", "Groceries from D-Mart"),
-        (user_id, 120.00,  "Transport",     "2026-04-02", "Metro card recharge"),
-        (user_id, 1200.00, "Bills",         "2026-04-03", "Electricity bill"),
-        (user_id, 350.00,  "Health",        "2026-04-05", "Pharmacy — vitamins"),
-        (user_id, 500.00,  "Entertainment", "2026-04-06", "Movie tickets"),
-        (user_id, 800.00,  "Shopping",      "2026-04-07", "New earphones"),
-        (user_id, 200.00,  "Other",         "2026-04-08", "Miscellaneous"),
-        (user_id, 180.00,  "Food",          "2026-04-08", "Lunch with colleagues"),
-        # May 2026
-        (user_id, 520.00,  "Food",          "2026-05-02", "Weekly groceries"),
-        (user_id, 250.00,  "Transport",     "2026-05-04", "Cab rides"),
-        (user_id, 1400.00, "Bills",         "2026-05-05", "Rent contribution"),
-        (user_id, 600.00,  "Shopping",      "2026-05-10", "Clothing"),
-        (user_id, 300.00,  "Health",        "2026-05-14", "Doctor visit"),
-        (user_id, 150.00,  "Entertainment", "2026-05-18", "Streaming subscriptions"),
-        (user_id, 420.00,  "Food",          "2026-05-22", "Restaurant dinner"),
-        # June 2026
-        (user_id, 680.00,  "Food",          "2026-06-01", "Groceries — Big Basket"),
-        (user_id, 1500.00, "Bills",         "2026-06-03", "Electricity + internet"),
-        (user_id, 200.00,  "Transport",     "2026-06-05", "Auto and cab rides"),
-        (user_id, 450.00,  "Health",        "2026-06-08", "Gym membership"),
-        (user_id, 900.00,  "Shopping",      "2026-06-10", "New shoes"),
-        (user_id, 350.00,  "Entertainment", "2026-06-14", "Concert tickets"),
-        (user_id, 280.00,  "Food",          "2026-06-17", "Team lunch"),
-        (user_id, 120.00,  "Transport",     "2026-06-19", "Metro monthly pass"),
-        (user_id, 175.00,  "Other",         "2026-06-21", "Stationery and misc"),
+        # Two months ago
+        (user_id, 450.00,  "Food",          month_date(2, 1), "Groceries from D-Mart"),
+        (user_id, 120.00,  "Transport",     month_date(2, 2), "Metro card recharge"),
+        (user_id, 1200.00, "Bills",         month_date(2, 3), "Electricity bill"),
+        (user_id, 350.00,  "Health",        month_date(2, 5), "Pharmacy — vitamins"),
+        (user_id, 500.00,  "Entertainment", month_date(2, 6), "Movie tickets"),
+        (user_id, 800.00,  "Shopping",      month_date(2, 7), "New earphones"),
+        (user_id, 200.00,  "Other",         month_date(2, 8), "Miscellaneous"),
+        (user_id, 180.00,  "Food",          month_date(2, 8), "Lunch with colleagues"),
+        # Last month
+        (user_id, 520.00,  "Food",          month_date(1, 2), "Weekly groceries"),
+        (user_id, 250.00,  "Transport",     month_date(1, 4), "Cab rides"),
+        (user_id, 1400.00, "Bills",         month_date(1, 5), "Rent contribution"),
+        (user_id, 600.00,  "Shopping",      month_date(1, 10), "Clothing"),
+        (user_id, 300.00,  "Health",        month_date(1, 14), "Doctor visit"),
+        (user_id, 150.00,  "Entertainment", month_date(1, 18), "Streaming subscriptions"),
+        (user_id, 420.00,  "Food",          month_date(1, 22), "Restaurant dinner"),
+        # This month
+        (user_id, 680.00,  "Food",          month_date(0, 1), "Groceries — Big Basket"),
+        (user_id, 1500.00, "Bills",         month_date(0, 3), "Electricity + internet"),
+        (user_id, 200.00,  "Transport",     month_date(0, 5), "Auto and cab rides"),
+        (user_id, 450.00,  "Health",        month_date(0, 8), "Gym membership"),
+        (user_id, 900.00,  "Shopping",      month_date(0, 10), "New shoes"),
+        (user_id, 350.00,  "Entertainment", month_date(0, 14), "Concert tickets"),
+        (user_id, 280.00,  "Food",          month_date(0, 17), "Team lunch"),
+        (user_id, 120.00,  "Transport",     month_date(0, 19), "Metro monthly pass"),
+        (user_id, 175.00,  "Other",         month_date(0, 21), "Stationery and misc"),
     ]
 
     conn.executemany(
@@ -129,12 +140,12 @@ def seed_db():
     )
 
     income_entries = [
-        (user_id, 50000.00, "Salary",    "2026-04-01", "Monthly salary — April"),
-        (user_id,  5000.00, "Freelance", "2026-04-15", "Web design project"),
-        (user_id, 50000.00, "Salary",    "2026-05-01", "Monthly salary — May"),
-        (user_id,  3500.00, "Freelance", "2026-05-20", "Logo design"),
-        (user_id, 50000.00, "Salary",    "2026-06-01", "Monthly salary — June"),
-        (user_id,  8000.00, "Freelance", "2026-06-10", "App development project"),
+        (user_id, 50000.00, "Salary",    month_date(2, 1), "Monthly salary"),
+        (user_id,  5000.00, "Freelance", month_date(2, 15), "Web design project"),
+        (user_id, 50000.00, "Salary",    month_date(1, 1), "Monthly salary"),
+        (user_id,  3500.00, "Freelance", month_date(1, 20), "Logo design"),
+        (user_id, 50000.00, "Salary",    month_date(0, 1), "Monthly salary"),
+        (user_id,  8000.00, "Freelance", month_date(0, 10), "App development project"),
     ]
     conn.executemany(
         "INSERT INTO income (user_id, amount, source, date, description) VALUES (?, ?, ?, ?, ?)",
