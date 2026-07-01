@@ -69,6 +69,101 @@ def _build_chat_system_prompt(curr_month, curr_expenses, curr_income,
     )
 
 
+def _format_currency_short(amount):
+    if amount >= 1000:
+        value = amount / 1000
+        return f"₹{value:.0f}k" if value == int(value) else f"₹{value:.1f}k"
+    return f"₹{amount:.0f}"
+
+
+def _rounded_top_bar_path(x, y, width, height, radius=6):
+    """SVG path for a bar rect rounded on its top two corners only, flat on the baseline."""
+    r = min(radius, width / 2, height) if height > 0 else 0
+    if r <= 0:
+        return f"M{x},{y} L{x + width},{y} L{x + width},{y + height} L{x},{y + height} Z"
+    return (
+        f"M{x},{y + r} "
+        f"Q{x},{y} {x + r},{y} "
+        f"L{x + width - r},{y} "
+        f"Q{x + width},{y} {x + width},{y + r} "
+        f"L{x + width},{y + height} "
+        f"L{x},{y + height} Z"
+    )
+
+
+def _build_trend_chart(monthly_trend, width=620, height=210, pad_x=28, pad_top=40, pad_bottom=26, bar_gap_ratio=0.36):
+    totals = [m['total'] for m in monthly_trend]
+    max_total = max(totals) if totals else 0
+    has_data = max_total > 0
+
+    n = len(monthly_trend)
+    usable_width = width - (2 * pad_x)
+    usable_height = height - pad_top - pad_bottom
+    slot_width = usable_width / n if n else 0
+    bar_width = slot_width * (1 - bar_gap_ratio)
+    baseline = pad_top + usable_height
+
+    bars = []
+    for i, m in enumerate(monthly_trend):
+        slot_x = pad_x + (i * slot_width)
+        bar_x = slot_x + (slot_width - bar_width) / 2
+        ratio = (m['total'] / max_total) if max_total > 0 else 0
+        bar_height = usable_height * ratio
+        bar_y = baseline - bar_height
+        label_x = round(slot_x + slot_width / 2, 1)
+        value_y = round(max(bar_y - 8, 10), 1)
+        display_total = _format_currency_short(m['total']) if m['total'] > 0 else ''
+        chip_width = round(10 + len(display_total) * 6.3, 1) if display_total else 0
+        bars.append({
+            'path': _rounded_top_bar_path(round(bar_x, 1), round(bar_y, 1), round(bar_width, 1), round(bar_height, 1)),
+            'label_x': label_x,
+            'label_y': round(baseline + 20, 1),
+            'value_y': value_y,
+            'diamond_y': round(value_y - 18, 1),
+            'chip_x': round(label_x - chip_width / 2, 1),
+            'chip_y': round(value_y - 12, 1),
+            'chip_width': chip_width,
+            'label': m['label'],
+            'total': m['total'],
+            'display_total': display_total,
+            'is_zero': m['total'] <= 0,
+            'title': f"{m['label']} · ₹{m['total']:,.0f}",
+            'is_current': i == n - 1,
+            'delay': round(i * 0.05, 2),
+        })
+
+    gridlines = [round(baseline - (usable_height * frac), 1) for frac in (0.33, 0.66)] if max_total > 0 else []
+
+    current_total = totals[-1] if totals else 0
+    previous_total = totals[-2] if len(totals) >= 2 else None
+    delta_pct = None
+    trend_direction = 'flat'
+    if previous_total is not None:
+        if previous_total > 0:
+            delta_pct = abs(((current_total - previous_total) / previous_total) * 100)
+            if current_total > previous_total:
+                trend_direction = 'up'
+            elif current_total < previous_total:
+                trend_direction = 'down'
+        elif current_total > 0:
+            delta_pct = 100.0
+            trend_direction = 'up'
+        else:
+            delta_pct = 0.0
+
+    return {
+        'width': width,
+        'height': height,
+        'baseline': round(baseline, 1),
+        'bars': bars,
+        'gridlines': gridlines,
+        'has_data': has_data,
+        'current_total': current_total,
+        'delta_pct': delta_pct,
+        'trend_direction': trend_direction,
+    }
+
+
 # ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
@@ -176,11 +271,13 @@ def dashboard():
     current_time = now.strftime("%I:%M %p")
 
     # Get dashboard data using helper functions
-    from database.db import get_user_expenses_this_month, get_user_income_this_month, get_expenses_by_category, get_recent_transactions
+    from database.db import get_user_expenses_this_month, get_user_income_this_month, get_expenses_by_category, get_recent_transactions, get_monthly_expense_totals
     expenses = get_user_expenses_this_month(user_id)
     income = get_user_income_this_month(user_id)
     categories = get_expenses_by_category(user_id)
     recent_transactions = get_recent_transactions(user_id)
+    monthly_trend = get_monthly_expense_totals(user_id)
+    trend_chart = _build_trend_chart(monthly_trend)
 
     # Calculate summary statistics
     total_expenses = sum(expense['amount'] for expense in expenses) if expenses else 0
@@ -199,7 +296,8 @@ def dashboard():
         'transaction_count': transaction_count,
         'categories': categories,
         'recent_transactions': recent_transactions,
-        'has_transactions': transaction_count > 0
+        'has_transactions': transaction_count > 0,
+        'trend_chart': trend_chart,
     }
 
     return render_template("dashboard.html", **dashboard_data)
