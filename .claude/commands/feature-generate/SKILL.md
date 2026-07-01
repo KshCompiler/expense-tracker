@@ -168,6 +168,17 @@ Generate a spec document with **this exact structure**.
 
 One paragraph describing what this feature does and why it exists at this stage of the Spendly roadmap.
 
+## Design
+
+Required whenever this feature adds or changes any UI (skip only if the feature is purely backend/data with no template changes — write `No UI changes.` instead).
+
+Produce this using the same planning process as the `frontend-design` skill, formatted as:
+
+* **Palette** — named colors mapped to existing CSS variables (e.g. `Primary accent → var(--accent)`). Do not introduce new hex values; reuse tokens already defined in `static/css/style.css`.
+* **Typography** — role → font mapping, reusing `var(--font-display)` / `var(--font-body)` per role (display heading, body text, captions/data).
+* **Layout** — a one-sentence layout concept plus a small ASCII wireframe of the new/changed UI.
+* **Signature** — the one deliberate, memorable detail this feature's UI should be remembered by, consistent with Spendly's existing ledger/passbook aesthetic (serif display headings, hairline borders, green/terracotta accents).
+
 ## Depends on
 
 Which previous steps this feature requires.
@@ -250,6 +261,7 @@ Claude **must always** follow these rules:
 
 ### Frontend
 
+* **Whenever implementation of this spec is requested and it touches any template or UI, always invoke the built-in `frontend-design` skill before writing template/CSS code.** This applies every time — not just once per spec. Use it to fill in and refine the Design section above and to guide the actual markup/CSS.
 * All templates must extend `base.html`.
 * Use CSS variables only. Never hardcode hex color values.
 * Build every page as production-ready, not as a prototype.
@@ -320,5 +332,6 @@ Title:     <feature_title>
 Then print:
 
 > Review the spec at `.claude/specs/<step_number>-<feature_slug>.md` then enter Plan Mode with Shift+Tab twice to begin implementation.
+> Note: when implementation touches any UI, the `frontend-design` skill will be invoked automatically before templates/CSS are written.
 
 Do **not** print the full spec in chat unless explicitly asked.
