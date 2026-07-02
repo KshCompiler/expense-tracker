@@ -14,6 +14,9 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-change-in-production'  # Needed for flash messages
+# Defense-in-depth: caps the request body Werkzeug will parse before any route
+# code runs, independent of the in-route 5MB bill-image check further below.
+app.config['MAX_CONTENT_LENGTH'] = 6 * 1024 * 1024
 
 # Email validation regex
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -538,6 +541,18 @@ def add_expense():
     return render_template("add_expense.html")
 
 
+def _sniff_image_mimetype(data):
+    """Identify the image format from its actual bytes rather than trusting the
+    client-supplied Content-Type, which is trivially spoofable."""
+    if data.startswith(b'\xff\xd8\xff'):
+        return 'image/jpeg'
+    if data.startswith(b'\x89PNG\r\n\x1a\n'):
+        return 'image/png'
+    if data[:4] == b'RIFF' and data[8:12] == b'WEBP':
+        return 'image/webp'
+    return None
+
+
 def _extract_financial_document(field_name, valid_values, doc_kind):
     """Shared by /expenses/extract-bill and /income/extract-bill: validate the
     uploaded image, ask the vision model to read it, and re-validate every
@@ -547,22 +562,23 @@ def _extract_financial_document(field_name, valid_values, doc_kind):
     if not file or file.filename == '':
         return jsonify({"error": "No image was uploaded."}), 400
 
-    if file.mimetype not in ALLOWED_BILL_MIME_TYPES:
-        return jsonify({"error": "Please upload a JPG, PNG, or WEBP image."}), 400
-
     image_bytes = file.read(MAX_BILL_IMAGE_BYTES + 1)
     if not image_bytes:
         return jsonify({"error": "That image appears to be empty."}), 400
     if len(image_bytes) > MAX_BILL_IMAGE_BYTES:
         return jsonify({"error": "That image is too large — please use a photo under 5MB."}), 400
 
+    mimetype = _sniff_image_mimetype(image_bytes)
+    if mimetype not in ALLOWED_BILL_MIME_TYPES:
+        return jsonify({"error": "Please upload a JPG, PNG, or WEBP image."}), 400
+
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
-        return jsonify({"error": "Document scanning isn't available right now — please enter the details manually."}), 500
+        return jsonify({"error": "Document scanning isn't available right now — please enter the details manually."}), 503
 
     try:
         b64_image = base64.b64encode(image_bytes).decode('utf-8')
-        data_url = f"data:{file.mimetype};base64,{b64_image}"
+        data_url = f"data:{mimetype};base64,{b64_image}"
 
         client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
         response = client.chat.completions.create(
@@ -581,6 +597,8 @@ def _extract_financial_document(field_name, valid_values, doc_kind):
         raw = response.choices[0].message.content.strip()
         raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         parsed = json.loads(raw)
+        if not isinstance(parsed, dict):
+            raise ValueError("model response was not a JSON object")
     except Exception as e:
         app.logger.error("Document extraction error: %s", e, exc_info=True)
         return jsonify({"error": "Couldn't read that image — please enter the details manually."}), 500
@@ -613,8 +631,7 @@ def _extract_financial_document(field_name, valid_values, doc_kind):
     else:
         description = None
 
-    result = {"amount": amount, "date": date, "description": description}
-    result[field_name] = field_value
+    result = {"amount": amount, "date": date, "description": description, field_name: field_value}
     return jsonify(result)
 
 
