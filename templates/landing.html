@@ -32,57 +32,64 @@
     </div>
     <div class="hero-visual">
         <div class="mock-card">
-            <div class="mock-card-header">
-                <span class="mock-label">June 2026</span>
+            <div class="mock-cover">
+                <div class="mock-cover-left">
+                    <span class="mock-cover-seal" aria-hidden="true">◈</span>
+                    <span class="mock-label">June 2026</span>
+                </div>
                 <span class="mock-total">₹12,450</span>
             </div>
-            <div class="mock-mini-stats">
-                <div class="mock-mini-stat">
-                    <span class="mock-mini-label">Income</span>
-                    <span class="mock-mini-val mock-positive">₹40,000</span>
-                </div>
-                <div class="mock-mini-stat">
-                    <span class="mock-mini-label">Saved</span>
-                    <span class="mock-mini-val mock-accent2">₹27,550</span>
-                </div>
-                <div class="mock-mini-stat">
-                    <span class="mock-mini-label">Txns</span>
-                    <span class="mock-mini-val">24</span>
-                </div>
-            </div>
-            <div class="mock-bars">
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Bills</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar" style="width: 72%"></div>
+            <div class="mock-ledger">
+                <div class="mock-mini-stats">
+                    <div class="mock-mini-stat">
+                        <span class="mock-mini-label">Income</span>
+                        <span class="mock-mini-val mock-positive">₹40,000</span>
                     </div>
-                    <span class="mock-amt">₹4,500</span>
-                </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Food</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-2" style="width: 52%"></div>
+                    <div class="mock-mini-stat">
+                        <span class="mock-mini-label">Saved</span>
+                        <span class="mock-mini-val mock-accent2">₹27,550</span>
                     </div>
-                    <span class="mock-amt">₹3,200</span>
-                </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Health</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-3" style="width: 33%"></div>
+                    <div class="mock-mini-stat">
+                        <span class="mock-mini-label">Txns</span>
+                        <span class="mock-mini-val">24</span>
                     </div>
-                    <span class="mock-amt">₹2,050</span>
                 </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Transport</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-4" style="width: 28%"></div>
+                <div class="mock-tally-bar">
+                    <div class="mock-tally-seg" style="flex: 0 0 39%; background: #e65100;"></div>
+                    <div class="mock-tally-seg" style="flex: 0 0 28%; background: #c17f24;"></div>
+                    <div class="mock-tally-seg" style="flex: 0 0 18%; background: #1a472a;"></div>
+                    <div class="mock-tally-seg" style="flex: 0 0 15%; background: #1565c0;"></div>
+                </div>
+                <div class="mock-legend">
+                    <div class="mock-legend-row">
+                        <span class="mock-legend-dot" style="background: #e65100;"></span>
+                        <span class="mock-legend-name">Bills</span>
+                        <span class="mock-legend-leader"></span>
+                        <span class="mock-legend-amt">₹4,500</span>
                     </div>
-                    <span class="mock-amt">₹1,800</span>
+                    <div class="mock-legend-row">
+                        <span class="mock-legend-dot" style="background: #c17f24;"></span>
+                        <span class="mock-legend-name">Food</span>
+                        <span class="mock-legend-leader"></span>
+                        <span class="mock-legend-amt">₹3,200</span>
+                    </div>
+                    <div class="mock-legend-row">
+                        <span class="mock-legend-dot" style="background: #1a472a;"></span>
+                        <span class="mock-legend-name">Health</span>
+                        <span class="mock-legend-leader"></span>
+                        <span class="mock-legend-amt">₹2,050</span>
+                    </div>
+                    <div class="mock-legend-row">
+                        <span class="mock-legend-dot" style="background: #1565c0;"></span>
+                        <span class="mock-legend-name">Transport</span>
+                        <span class="mock-legend-leader"></span>
+                        <span class="mock-legend-amt">₹1,800</span>
+                    </div>
                 </div>
-            </div>
-            <div class="mock-ai-hint">
-                <span class="mock-ai-dot"></span>
-                <span class="mock-ai-text">Sage: Food spend up 18% vs last month</span>
+                <div class="mock-ai-hint">
+                    <span class="mock-ai-dot"></span>
+                    <span class="mock-ai-text">Sage: Food spend up 18% vs last month</span>
+                </div>
             </div>
         </div>
     </div>
@@ -126,32 +133,29 @@
             <p class="features-subheading">No bloat, no subscriptions, no excuses — just a clean tool that helps you spend smarter.</p>
         </div>
         <div class="features-grid">
-            <div class="feature-card">
+            <div class="feature-card feat-log">
                 <div class="feature-card-top">
                     <div class="feature-icon-wrap">
                         <span class="feature-icon">₹</span>
                     </div>
-                    <span class="feature-num">01</span>
                 </div>
                 <h3 class="feature-title">Log expenses instantly</h3>
                 <p class="feature-body">Add any expense in seconds — category, amount, date. No bloat, no friction, no forgetting.</p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card feat-patterns">
                 <div class="feature-card-top">
                     <div class="feature-icon-wrap">
                         <span class="feature-icon">◎</span>
                     </div>
-                    <span class="feature-num">02</span>
                 </div>
                 <h3 class="feature-title">See spending patterns</h3>
                 <p class="feature-body">Category breakdowns reveal exactly where your money goes each month — so you can fix it.</p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card feat-sage">
                 <div class="feature-card-top">
                     <div class="feature-icon-wrap">
                         <span class="feature-icon">✦</span>
                     </div>
-                    <span class="feature-num">03</span>
                 </div>
                 <h3 class="feature-title">Meet Sage, your AI advisor</h3>
                 <p class="feature-body">Chat with Sage to get personalised insights based on your actual numbers — not generic tips from the internet.</p>

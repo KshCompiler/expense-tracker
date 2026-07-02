@@ -6,7 +6,7 @@
 <section class="exp-section">
     <div class="exp-container">
 
-        <div class="income-page-header">
+        <div class="entry-page-header">
             <div class="income-badge">
                 <svg class="income-badge-arrow" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6 10V2M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
@@ -24,13 +24,13 @@
                 <!-- Amount -->
                 <div class="form-group">
                     <label for="amount">Amount</label>
-                    <div class="amount-input-wrap">
-                        <span class="amount-currency">₹</span>
+                    <div class="amount-slip">
+                        <span class="amount-slip-currency">₹</span>
                         <input
                             type="number"
                             id="amount"
                             name="amount"
-                            class="form-input amount-input"
+                            class="amount-slip-input"
                             placeholder="0.00"
                             step="0.01"
                             min="0.01"
@@ -45,27 +45,27 @@
                     <label>Source</label>
                     <input type="hidden" id="category" name="source" required>
                     <div class="cat-grid income-cat-grid">
-                        <div class="cat-item income-cat-item" data-value="Salary">
+                        <div class="cat-item income-cat-item" data-value="Salary" style="--tile-color:#1a472a; --tile-tint:#e8f0eb;">
                             <span class="cat-icon">💼</span>
                             <span class="cat-label">Salary</span>
                         </div>
-                        <div class="cat-item income-cat-item" data-value="Freelance">
+                        <div class="cat-item income-cat-item" data-value="Freelance" style="--tile-color:#5b7fa6; --tile-tint:#e8eef5;">
                             <span class="cat-icon">💻</span>
                             <span class="cat-label">Freelance</span>
                         </div>
-                        <div class="cat-item income-cat-item" data-value="Business">
+                        <div class="cat-item income-cat-item" data-value="Business" style="--tile-color:#c17f24; --tile-tint:#fdf3e3;">
                             <span class="cat-icon">🏪</span>
                             <span class="cat-label">Business</span>
                         </div>
-                        <div class="cat-item income-cat-item" data-value="Investment">
+                        <div class="cat-item income-cat-item" data-value="Investment" style="--tile-color:#2a7a6f; --tile-tint:#e3f2ef;">
                             <span class="cat-icon">📈</span>
                             <span class="cat-label">Investment</span>
                         </div>
-                        <div class="cat-item income-cat-item" data-value="Gift">
+                        <div class="cat-item income-cat-item" data-value="Gift" style="--tile-color:#c2185b; --tile-tint:#fce4ec;">
                             <span class="cat-icon">🎁</span>
                             <span class="cat-label">Gift</span>
                         </div>
-                        <div class="cat-item income-cat-item" data-value="Other">
+                        <div class="cat-item income-cat-item" data-value="Other" style="--tile-color:#6b6b6b; --tile-tint:#f0ede6;">
                             <span class="cat-icon">✦</span>
                             <span class="cat-label">Other</span>
                         </div>

@@ -14,11 +14,17 @@
         gap: 2rem;
     }
 
-    /* ── Welcome banner ── */
-    .db-welcome {
+    /* ── Passbook folio: cover + sealed ledger strip ── */
+    .db-folio {
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    .db-folio-cover {
         background: linear-gradient(135deg, #1a3d28 0%, #2d6b45 100%);
-        border-radius: var(--radius-md);
-        padding: 1.75rem 2rem;
+        padding: 1.75rem 2rem 2.25rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -27,7 +33,7 @@
         overflow: hidden;
     }
 
-    .db-welcome::before {
+    .db-folio-cover::before {
         content: '◈';
         position: absolute;
         right: -0.5rem;
@@ -40,14 +46,14 @@
         user-select: none;
     }
 
-    .db-welcome-left h1 {
+    .db-folio-greeting h1 {
         font-family: var(--font-display);
         font-size: 1.85rem;
         color: #fff;
         margin-bottom: 0.25rem;
     }
 
-    .db-welcome-left p {
+    .db-folio-greeting p {
         font-size: 0.875rem;
         color: rgba(255,255,255,0.55);
     }
@@ -88,66 +94,71 @@
 
     .db-action-group { display: flex; gap: 0.75rem; flex-shrink: 0; }
 
-    /* ── Stat cards ── */
-    .db-stats {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
+    /* Seam between cover and ledger, stamped with the brand mark like a wax seal */
+    .db-folio-seam {
+        position: relative;
+        height: 0;
     }
 
-    .db-stat {
+    .db-folio-seal {
+        position: absolute;
+        top: -17px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
         background: var(--paper-card);
         border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: 1.35rem 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        transition: box-shadow 0.2s, transform 0.2s;
-    }
-
-    .db-stat:hover {
-        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-        transform: translateY(-2px);
-    }
-
-    .db-stat-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;
+        color: var(--accent-2);
+        font-size: 0.95rem;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        z-index: 2;
     }
 
-    .stat-expense .db-stat-icon { background: var(--danger-light); color: var(--danger); }
-    .stat-income  .db-stat-icon { background: var(--accent-light); color: var(--accent); }
-    .stat-balance .db-stat-icon { background: var(--accent-2-light); color: var(--accent-2); }
-    .stat-count   .db-stat-icon { background: #e8eef5; color: #5b7fa6; }
+    /* ── Ledger strip: totals as ruled columns, not icon cards ── */
+    .db-folio-ledger {
+        background: var(--paper-card);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        padding: 1.75rem 2rem 1.5rem;
+    }
 
-    .db-stat-body { display: flex; flex-direction: column; gap: 0.2rem; }
+    .db-ledger-col {
+        padding: 0 1.5rem;
+        border-right: 1px solid var(--border-soft);
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
 
-    .db-stat-label {
-        font-size: 0.73rem;
+    .db-ledger-col:first-child { padding-left: 0; }
+    .db-ledger-col:last-child { border-right: none; padding-right: 0; }
+
+    .db-ledger-label {
+        font-size: 0.72rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.07em;
         color: var(--ink-muted);
     }
 
-    .db-stat-value {
+    .db-ledger-value {
         font-family: var(--font-display);
-        font-size: 1.65rem;
+        font-size: 1.7rem;
         color: var(--ink);
-        line-height: 1.1;
+        line-height: 1.15;
+        font-variant-numeric: tabular-nums;
     }
 
-    .db-stat-value.neg { color: var(--danger); }
-    .db-stat-value.pos { color: var(--accent); }
+    .db-ledger-value.pos { color: var(--accent); }
+    .db-ledger-value.neg { color: var(--danger); }
 
-    .db-stat-sub {
-        font-size: 0.78rem;
+    .db-ledger-sub {
+        font-size: 0.76rem;
         color: var(--ink-faint);
     }
 
@@ -192,24 +203,45 @@
         color: var(--ink);
     }
 
-    .db-bar-row {
+    /* Single segmented tally bar — one total, divided into its line items */
+    .db-tally-bar {
         display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-        margin-bottom: 1rem;
+        height: 14px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--border-soft);
+        box-shadow: inset 0 0 0 1px var(--border);
+        margin-bottom: 1.5rem;
     }
 
-    .db-bar-row:last-child { margin-bottom: 0; }
+    .db-tally-seg {
+        height: 100%;
+        transition: flex-basis 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-    .db-bar-meta {
+    .db-tally-seg:not(:last-child) {
+        border-right: 1.5px solid var(--paper-card);
+    }
+
+    /* Legend rows with a dotted leader, like line items on a ledger page */
+    .db-legend { display: flex; flex-direction: column; gap: 0.7rem; }
+
+    .db-legend-row {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
+        align-items: baseline;
         gap: 0.5rem;
     }
 
-    .db-bar-cat {
-        font-size: 0.82rem;
+    .db-legend-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 2px;
+        flex-shrink: 0;
+        transform: translateY(-1px);
+    }
+
+    .db-legend-name {
+        font-size: 0.85rem;
         font-weight: 500;
         color: var(--ink-soft);
         white-space: nowrap;
@@ -217,46 +249,30 @@
         text-overflow: ellipsis;
     }
 
-    .db-bar-right {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        flex-shrink: 0;
+    .db-legend-leader {
+        flex: 1;
+        min-width: 12px;
+        border-bottom: 1px dotted var(--border);
+        margin: 0 0.3rem;
+        transform: translateY(-4px);
     }
 
-    .db-bar-pct {
+    .db-legend-pct {
         font-size: 0.72rem;
         font-weight: 600;
         color: var(--ink-faint);
+        flex-shrink: 0;
     }
 
-    .db-bar-amt {
-        font-size: 0.82rem;
+    .db-legend-amt {
+        font-size: 0.85rem;
         font-weight: 600;
         color: var(--ink-muted);
-        min-width: 60px;
+        min-width: 62px;
         text-align: right;
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
     }
-
-    .db-bar-track {
-        height: 7px;
-        background: var(--border-soft);
-        border-radius: 999px;
-        overflow: hidden;
-    }
-
-    .db-bar-fill {
-        height: 100%;
-        border-radius: 999px;
-        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .db-bar-fill.c0 { background: var(--accent); }
-    .db-bar-fill.c1 { background: var(--accent-2); }
-    .db-bar-fill.c2 { background: #5b7fa6; }
-    .db-bar-fill.c3 { background: #8b5e83; }
-    .db-bar-fill.c4 { background: #c17f24; }
-    .db-bar-fill.c5 { background: #2a7a6f; }
 
     /* ── Recent transactions card ── */
     .db-txn-card {
@@ -276,7 +292,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.75rem 0;
+        padding: 0.7rem 0;
         border-bottom: 1px solid var(--border-soft);
         gap: 0.75rem;
         transition: background 0.15s;
@@ -289,23 +305,20 @@
     .db-txn-row:hover { background: var(--paper-warm); }
     .db-txn-row:last-child { border-bottom: none; }
 
-    .db-txn-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-        flex-shrink: 0;
-        background: var(--paper-warm);
-    }
-
     .db-txn-left {
         display: flex;
-        align-items: center;
-        gap: 0.75rem;
+        align-items: stretch;
+        gap: 0.7rem;
         min-width: 0;
+    }
+
+    /* Colored tick marks each entry, echoing the category's tally color */
+    .db-txn-swatch {
+        width: 3px;
+        border-radius: 2px;
+        flex-shrink: 0;
+        align-self: stretch;
+        min-height: 30px;
     }
 
     .db-txn-text {
@@ -313,6 +326,7 @@
         flex-direction: column;
         gap: 0.15rem;
         min-width: 0;
+        justify-content: center;
     }
 
     .db-txn-desc {
@@ -452,7 +466,7 @@
         stroke-width: 1.5;
     }
 
-    /* Stamped chip + brand mark that calls out the current month, echoing the nav brand icon */
+    /* Stamped chip + brand mark that calls out the current month, echoing the folio seal */
     .db-trend-chip {
         fill: var(--accent-2-light);
     }
@@ -489,24 +503,48 @@
 
     /* ── Responsive ── */
     @media (max-width: 860px) {
-        .db-stats { grid-template-columns: repeat(2, 1fr); }
-        .db-main  { grid-template-columns: 1fr; }
+        .db-main { grid-template-columns: 1fr; }
+
+        .db-folio-ledger {
+            grid-template-columns: repeat(2, 1fr);
+            row-gap: 1.25rem;
+        }
+
+        .db-ledger-col {
+            border-right: none;
+            padding: 0 0.9rem;
+        }
+
+        .db-ledger-col:nth-child(odd) { border-right: 1px solid var(--border-soft); padding-left: 0; }
+        .db-ledger-col:nth-child(even) { padding-right: 0; }
     }
 
     @media (max-width: 520px) {
         .db-wrap        { padding: 1rem 0.875rem 3rem; gap: 1rem; }
-        .db-stats       { grid-template-columns: 1fr 1fr; }
-        .db-welcome     { flex-direction: column; align-items: flex-start; padding: 1.25rem 1.25rem; }
+        .db-folio-cover { flex-direction: column; align-items: flex-start; padding: 1.25rem 1.25rem 2rem; }
         .db-action-group { width: 100%; flex-direction: row; }
         .db-add-btn      { flex: 1; justify-content: center; font-size: 0.8rem; padding: 0.6rem 0.75rem; }
+
+        .db-folio-ledger {
+            grid-template-columns: 1fr;
+            padding: 1.25rem 1.25rem 0.75rem;
+        }
+
+        .db-ledger-col {
+            border-right: none !important;
+            border-bottom: 1px solid var(--border-soft);
+            padding: 0.85rem 0 !important;
+        }
+
+        .db-ledger-col:first-child { padding-top: 0 !important; }
+        .db-ledger-col:last-child { border-bottom: none; padding-bottom: 0 !important; }
+
         .db-chart-card,
         .db-txn-card,
         .db-trend-card  { padding: 1.1rem; }
-        .db-stat        { padding: 1rem 1.1rem; }
     }
 
     @media (max-width: 380px) {
-        .db-stats { grid-template-columns: 1fr; }
         .db-action-group { flex-direction: column; }
         .db-add-btn { width: 100%; }
     }
@@ -577,74 +615,61 @@
 
 {% block content %}
 
+{% set cat_colors = {'Food': '#c17f24', 'Transport': '#1565c0', 'Shopping': '#7b1fa2', 'Bills': '#e65100', 'Entertainment': '#c2185b', 'Health': '#1a472a', 'Education': '#0d47a1', 'Other': '#6b6b6b'} %}
+
 <div class="db-wrap">
 
-    <!-- Welcome banner -->
-    <div class="db-welcome">
-        <div class="db-welcome-left">
-            <h1>Hi, {{ user['full_name'].split()[0] }}</h1>
-            <p>{{ today_date }} &middot; {{ current_time }}</p>
+    <!-- Passbook folio: stamped cover + sealed ledger strip -->
+    <div class="db-folio">
+        <div class="db-folio-cover">
+            <div class="db-folio-greeting">
+                <h1>Hi, {{ user['full_name'].split()[0] }}</h1>
+                <p>{{ today_date }} &middot; {{ current_time }}</p>
+            </div>
+            <div class="db-action-group">
+                <a href="{{ url_for('add_income') }}" class="db-add-btn db-add-income-btn">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    Add Income
+                </a>
+                <a href="{{ url_for('add_expense') }}" class="db-add-btn">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    Add Expense
+                </a>
+            </div>
         </div>
-        <div class="db-action-group">
-            <a href="{{ url_for('add_income') }}" class="db-add-btn db-add-income-btn">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                </svg>
-                Add Income
-            </a>
-            <a href="{{ url_for('add_expense') }}" class="db-add-btn">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                </svg>
-                Add Expense
-            </a>
-        </div>
-    </div>
 
-    <!-- Stat cards -->
-    <div class="db-stats">
-        <div class="db-stat stat-expense">
-            <div class="db-stat-icon">
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h11A1.5 1.5 0 0 1 15 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9zm2-.5a.5.5 0 0 0-.5.5V5h11V3.5a.5.5 0 0 0-.5-.5h-10zM14 7H2v5.5a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V7zm-6 1.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/></svg>
-            </div>
-            <div class="db-stat-body">
-                <div class="db-stat-label">Total Expenses</div>
-                <div class="db-stat-value neg">₹{{ "%.0f"|format(total_expenses) }}</div>
-                <div class="db-stat-sub">This month</div>
-            </div>
+        <div class="db-folio-seam">
+            <span class="db-folio-seal" aria-hidden="true">◈</span>
         </div>
-        <div class="db-stat stat-income">
-            <div class="db-stat-icon">
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v1H1V3zm0 2h14v9a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V5zm5 3.5a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H6z"/></svg>
+
+        <div class="db-folio-ledger">
+            <div class="db-ledger-col">
+                <span class="db-ledger-label">Expenses</span>
+                <span class="db-ledger-value neg">₹{{ "%.0f"|format(total_expenses) }}</span>
+                <span class="db-ledger-sub">This month</span>
             </div>
-            <div class="db-stat-body">
-                <div class="db-stat-label">Total Income</div>
-                <div class="db-stat-value pos">₹{{ "%.0f"|format(total_income) }}</div>
-                <div class="db-stat-sub">This month</div>
+            <div class="db-ledger-col">
+                <span class="db-ledger-label">Income</span>
+                <span class="db-ledger-value pos">₹{{ "%.0f"|format(total_income) }}</span>
+                <span class="db-ledger-sub">This month</span>
             </div>
-        </div>
-        <div class="db-stat stat-balance">
-            <div class="db-stat-icon">
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm.93 9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>
-            </div>
-            <div class="db-stat-body">
-                <div class="db-stat-label">Balance</div>
-                <div class="db-stat-value {% if remaining_balance >= 0 %}pos{% else %}neg{% endif %}">
+            <div class="db-ledger-col">
+                <span class="db-ledger-label">Balance</span>
+                <span class="db-ledger-value {% if remaining_balance >= 0 %}pos{% else %}neg{% endif %}">
                     ₹{{ "%.0f"|format(remaining_balance) }}
-                </div>
-                <div class="db-stat-sub">Income minus expenses</div>
+                </span>
+                <span class="db-ledger-sub">Income minus expenses</span>
             </div>
-        </div>
-        <div class="db-stat stat-count">
-            <div class="db-stat-icon">
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 3a.5.5 0 0 0 0 1h11a.5.5 0 0 0 0-1h-11zm0 3a.5.5 0 0 0 0 1h11a.5.5 0 0 0 0-1h-11zm0 3a.5.5 0 0 0 0 1h11a.5.5 0 0 0 0-1h-11zm0 3a.5.5 0 0 0 0 1h11a.5.5 0 0 0 0-1h-11z"/></svg>
-            </div>
-            <div class="db-stat-body">
-                <div class="db-stat-label">Transactions</div>
-                <div class="db-stat-value">{{ transaction_count }}</div>
-                <div class="db-stat-sub">This month</div>
+            <div class="db-ledger-col">
+                <span class="db-ledger-label">Transactions</span>
+                <span class="db-ledger-value">{{ transaction_count }}</span>
+                <span class="db-ledger-sub">This month</span>
             </div>
         </div>
     </div>
@@ -659,20 +684,21 @@
                 <span class="db-chart-total">₹{{ "%.0f"|format(total_expenses) }}</span>
             </div>
             {% if categories %}
-            <div>
+            <div class="db-tally-bar">
                 {% for cat in categories %}
                 {% set width = ((cat['total'] / total_expenses * 100) | round | int) if total_expenses > 0 else 0 %}
-                <div class="db-bar-row">
-                    <div class="db-bar-meta">
-                        <span class="db-bar-cat">{{ cat['category'] }}</span>
-                        <div class="db-bar-right">
-                            <span class="db-bar-pct">{{ width }}%</span>
-                            <span class="db-bar-amt">₹{{ "%.0f"|format(cat['total']) }}</span>
-                        </div>
-                    </div>
-                    <div class="db-bar-track">
-                        <div class="db-bar-fill c{{ loop.index0 % 6 }}" style="width: {{ width }}%"></div>
-                    </div>
+                <div class="db-tally-seg" style="flex: 0 0 {{ width }}%; background: {{ cat_colors.get(cat['category'], '#6b6b6b') }};"></div>
+                {% endfor %}
+            </div>
+            <div class="db-legend">
+                {% for cat in categories %}
+                {% set width = ((cat['total'] / total_expenses * 100) | round | int) if total_expenses > 0 else 0 %}
+                <div class="db-legend-row">
+                    <span class="db-legend-dot" style="background: {{ cat_colors.get(cat['category'], '#6b6b6b') }};"></span>
+                    <span class="db-legend-name">{{ cat['category'] }}</span>
+                    <span class="db-legend-leader"></span>
+                    <span class="db-legend-pct">{{ width }}%</span>
+                    <span class="db-legend-amt">₹{{ "%.0f"|format(cat['total']) }}</span>
                 </div>
                 {% endfor %}
             </div>
@@ -689,11 +715,10 @@
             </div>
             {% if has_transactions %}
             <div class="db-txn-list">
-                {% set cat_icons = {'Food':'🍔','Transport':'🚌','Bills':'💡','Health':'💊','Entertainment':'🎬','Shopping':'🛍️','Other':'📦'} %}
                 {% for txn in recent_transactions %}
                 <div class="db-txn-row">
                     <div class="db-txn-left">
-                        <div class="db-txn-icon">{{ cat_icons.get(txn['category'], '📦') }}</div>
+                        <div class="db-txn-swatch" style="background: {{ cat_colors.get(txn['category'], '#6b6b6b') }};"></div>
                         <div class="db-txn-text">
                             <span class="db-txn-desc">{{ txn['description'] or txn['category'] }}</span>
                             <div class="db-txn-meta">
