@@ -325,7 +325,7 @@ def dashboard():
         'transaction_count': transaction_count,
         'categories': categories,
         'recent_transactions': recent_transactions,
-        'has_transactions': transaction_count > 0,
+        'has_transactions': len(recent_transactions) > 0,
         'trend_chart': trend_chart,
     }
 
