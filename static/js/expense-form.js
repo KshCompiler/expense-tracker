@@ -168,5 +168,7 @@
                 return;
             }
         });
+
+        return { selectCategory: selectCategory, selectDate: selectDate };
     };
 })(window);

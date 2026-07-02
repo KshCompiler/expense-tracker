@@ -22,6 +22,16 @@
             <form method="POST" action="{{ url_for('add_expense') }}" id="expense-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
+                <!-- Bill upload -->
+                <div class="form-group">
+                    <div class="bill-drop" id="bill-drop" tabindex="0" role="button"
+                         aria-label="Upload a photo of your bill to auto-fill this form">
+                        <span class="bill-drop-icon" aria-hidden="true">🧾</span>
+                        <span class="bill-drop-text" id="bill-drop-status">Drop a bill photo here, or click to choose one</span>
+                        <input type="file" id="bill-file-input" accept="image/jpeg,image/png,image/webp" hidden>
+                    </div>
+                </div>
+
                 <!-- Amount -->
                 <div class="form-group">
                     <label for="amount">Amount</label>
@@ -143,5 +153,15 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/expense-form.js') }}"></script>
-<script>initExpenseForm({});</script>
+<script src="{{ url_for('static', filename='js/bill-upload.js') }}"></script>
+<script>
+    var expenseFormHelpers = initExpenseForm({});
+    initBillUpload(expenseFormHelpers, {
+        endpoint: '/expenses/extract-bill',
+        fieldKey: 'category',
+        scanningText: 'Reading your bill…',
+        emptyMessage: "Nothing could be read from that image — make sure it's a clear bill or receipt, or enter the details manually.",
+        successMessage: 'Filled in from your bill — check it over before saving.'
+    });
+</script>
 {% endblock %}
