@@ -69,27 +69,7 @@ From `$ARGUMENTS` extract:
 If these cannot be inferred from `$ARGUMENTS`, ask the user for clarification before proceeding.
 
 ---
-## Step 2.5 — Rename the Claude session
 
-Immediately after successfully parsing the feature information, rename the current Claude session before performing any Git operations or writing the spec.
-
-Use the following format for the session title:
-
-```
-Spendly – <feature_title>
-```
-
-Examples:
-
-* Spendly – Registration
-* Spendly – Login
-* Spendly – Login and Logout
-* Spendly – Dashboard
-* Spendly – Expense Management
-
-This step must be performed automatically every time this skill is activated.
-
-If the environment does not support automatically renaming the current Claude session, inform the user that the session could not be renamed and continue with the remaining steps without failing the workflow.
 
 ## Step 3 — Check branch name
 
