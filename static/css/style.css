@@ -1290,6 +1290,101 @@ a { color: inherit; text-decoration: none; }
 .expense-card .amount-slip:focus-within { border-bottom-color: var(--danger); }
 .income-card  .amount-slip:focus-within { border-bottom-color: var(--accent); }
 
+/* Bill drop-zone — a perforated tear-off stub, like the one on a paper receipt
+   or a chequebook, rather than a generic file-upload box. */
+.bill-drop {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 1.1rem 1.5rem;
+    border-top: 1.5px dashed var(--border);
+    border-bottom: 1.5px dashed var(--border);
+    background: var(--paper);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.bill-drop::before,
+.bill-drop::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--paper-card);
+    border: 1.5px dashed var(--border);
+    transform: translateY(-50%);
+    transition: border-color 0.15s;
+}
+
+.bill-drop::before { left: -7px; }
+.bill-drop::after { right: -7px; }
+
+.bill-drop:hover,
+.bill-drop:focus-visible {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    outline: none;
+}
+
+.bill-drop:hover::before, .bill-drop:hover::after,
+.bill-drop:focus-visible::before, .bill-drop:focus-visible::after {
+    border-color: var(--accent);
+}
+
+.bill-drop.dragover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+.bill-drop.dragover::before, .bill-drop.dragover::after { border-color: var(--accent); }
+
+.bill-drop.scanning {
+    border-color: var(--accent-2);
+    background: var(--accent-2-light);
+    cursor: wait;
+    pointer-events: none;
+}
+
+.bill-drop.scanning::before, .bill-drop.scanning::after { border-color: var(--accent-2); }
+
+.bill-drop.scanning .bill-drop-icon {
+    animation: bill-scan-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes bill-scan-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+}
+
+.bill-drop-icon { font-size: 1.5rem; line-height: 1; }
+
+.bill-drop-text {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+}
+
+/* Auto-filled field confirmation — a quiet "this got written for you" flash */
+@keyframes bill-fill-flash {
+    0%   { background: var(--accent-light); }
+    100% { background: transparent; }
+}
+
+.bill-filled {
+    animation: bill-fill-flash 1.1s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bill-drop.scanning .bill-drop-icon { animation: none; }
+    .bill-filled { animation: none; }
+}
+
 .datepicker-wrap { position: relative; }
 
 .datepicker-trigger {

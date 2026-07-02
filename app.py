@@ -4,6 +4,8 @@ from werkzeug.security import check_password_hash
 from dotenv import load_dotenv
 import os
 import re
+import json
+import base64
 import secrets
 from datetime import datetime
 from openai import OpenAI
@@ -17,6 +19,12 @@ app.secret_key = 'dev-secret-key-change-in-production'  # Needed for flash messa
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 VALID_CATEGORIES = {'Food', 'Transport', 'Bills', 'Health', 'Entertainment', 'Shopping', 'Other'}
 VALID_INCOME_SOURCES = {'Salary', 'Freelance', 'Business', 'Investment', 'Gift', 'Other'}
+
+# Bill-scanning (OCR billing) settings
+ALLOWED_BILL_MIME_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+MAX_BILL_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
+# Groq's vision-capable model lineup changes over time — override via env if this one is retired.
+BILL_OCR_MODEL = os.environ.get('BILL_OCR_MODEL', 'meta-llama/llama-4-scout-17b-16e-instruct')
 
 # Initialize database
 init_db()
@@ -66,6 +74,24 @@ def _build_chat_system_prompt(curr_month, curr_expenses, curr_income,
         "User's Financial Data:\n"
         f"- {prev_label}: Income ₹{prev_income:.0f} | Expenses: {_fmt_expenses(prev_expenses)}\n"
         f"- {curr_label}: Income ₹{curr_income:.0f} | Expenses: {_fmt_expenses(curr_expenses)}"
+    )
+
+
+def _build_bill_extraction_prompt(valid_values, field_name, doc_kind):
+    values_list = ", ".join(sorted(valid_values))
+    return (
+        f"You are reading a photo of a {doc_kind} for a personal finance app. "
+        "Extract exactly these fields and reply with STRICT JSON only — no markdown code "
+        "fences, no commentary, nothing before or after the JSON object:\n"
+        '{"amount": <number or null>, "' + field_name + '": <one of [' + values_list + '] or null>, '
+        '"date": <"YYYY-MM-DD" or null>, "description": <short string under 60 characters or null>}\n\n'
+        "Rules:\n"
+        "- amount is the total amount on the document, as a plain number with no currency symbol or commas.\n"
+        f"- {field_name} must be exactly one of the listed values, or null if you're not confident.\n"
+        "- date is the date on the document in YYYY-MM-DD format, or null if illegible or absent.\n"
+        "- description briefly names the merchant/payer or what the document is for, or null if unclear.\n"
+        "- If you cannot confidently read a field, return null for it — never guess.\n"
+        f"- If the image is not a {doc_kind} at all, return null for every field."
     )
 
 
@@ -510,6 +536,104 @@ def add_expense():
 
     # GET request - show add expense form
     return render_template("add_expense.html")
+
+
+def _extract_financial_document(field_name, valid_values, doc_kind):
+    """Shared by /expenses/extract-bill and /income/extract-bill: validate the
+    uploaded image, ask the vision model to read it, and re-validate every
+    field server-side before handing it back. `field_name` is "category" for
+    expenses or "source" for income; `valid_values` constrains that field."""
+    file = request.files.get('bill_image')
+    if not file or file.filename == '':
+        return jsonify({"error": "No image was uploaded."}), 400
+
+    if file.mimetype not in ALLOWED_BILL_MIME_TYPES:
+        return jsonify({"error": "Please upload a JPG, PNG, or WEBP image."}), 400
+
+    image_bytes = file.read(MAX_BILL_IMAGE_BYTES + 1)
+    if not image_bytes:
+        return jsonify({"error": "That image appears to be empty."}), 400
+    if len(image_bytes) > MAX_BILL_IMAGE_BYTES:
+        return jsonify({"error": "That image is too large — please use a photo under 5MB."}), 400
+
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        return jsonify({"error": "Document scanning isn't available right now — please enter the details manually."}), 500
+
+    try:
+        b64_image = base64.b64encode(image_bytes).decode('utf-8')
+        data_url = f"data:{file.mimetype};base64,{b64_image}"
+
+        client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
+        response = client.chat.completions.create(
+            model=BILL_OCR_MODEL,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": _build_bill_extraction_prompt(valid_values, field_name, doc_kind)},
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                    ],
+                }
+            ],
+            temperature=0,
+        )
+        raw = response.choices[0].message.content.strip()
+        raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        parsed = json.loads(raw)
+    except Exception as e:
+        app.logger.error("Document extraction error: %s", e, exc_info=True)
+        return jsonify({"error": "Couldn't read that image — please enter the details manually."}), 500
+
+    # Never trust the model's output as final — re-validate every field server-side.
+    amount = parsed.get("amount")
+    try:
+        amount = float(amount) if amount is not None else None
+        if amount is not None and amount <= 0:
+            amount = None
+    except (TypeError, ValueError):
+        amount = None
+
+    field_value = parsed.get(field_name)
+    if field_value not in valid_values:
+        field_value = None
+
+    date = parsed.get("date")
+    if date:
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except (TypeError, ValueError):
+            date = None
+    else:
+        date = None
+
+    description = parsed.get("description")
+    if isinstance(description, str):
+        description = description.strip()[:120] or None
+    else:
+        description = None
+
+    result = {"amount": amount, "date": date, "description": description}
+    result[field_name] = field_value
+    return jsonify(result)
+
+
+@app.route("/expenses/extract-bill", methods=["POST"])
+def extract_bill():
+    if 'user_id' not in session:
+        return jsonify({"error": "Please log in to scan a bill."}), 401
+
+    check_csrf()
+    return _extract_financial_document('category', VALID_CATEGORIES, 'shopping bill or receipt')
+
+
+@app.route("/income/extract-bill", methods=["POST"])
+def extract_income_bill():
+    if 'user_id' not in session:
+        return jsonify({"error": "Please log in to scan a document."}), 401
+
+    check_csrf()
+    return _extract_financial_document('source', VALID_INCOME_SOURCES, 'payslip, invoice, or proof of income')
 
 
 @app.route("/view_transactions")
