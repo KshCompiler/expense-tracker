@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
-import type { ChatMessage } from '../types';
+import type { ChatMessage, DashboardData } from '../types';
 import './Suggestions.css';
 
 interface DisplayMessage {
@@ -10,7 +10,7 @@ interface DisplayMessage {
   time: string;
 }
 
-const STARTERS = [
+const ALL_STARTERS = [
   '📊 Where am I spending the most?',
   '📅 Compare my last two months',
   '💡 How can I save money?',
@@ -46,10 +46,23 @@ export function Suggestions() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [welcomeTime] = useState(() => formatTime(new Date()));
+  const [monthsWithData, setMonthsWithData] = useState<number | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  useEffect(() => {
+    api
+      .get<DashboardData>('/dashboard')
+      .then((data) => setMonthsWithData(data.monthly_trend.filter((point) => point.total > 0).length))
+      .catch(() => setMonthsWithData(0));
+  }, []);
+
+  const starters =
+    monthsWithData !== null && monthsWithData >= 2
+      ? ALL_STARTERS
+      : ALL_STARTERS.filter((chip) => !chip.includes('Compare my last two months'));
 
   const send = async (message: string) => {
     const trimmed = message.trim();
@@ -105,7 +118,9 @@ export function Suggestions() {
           </div>
           <div className="sage-tb-sub">Your personal finance advisor · powered by Spendly</div>
         </div>
-        <div className="sage-tb-pill">📊 2 months of data loaded</div>
+        <div className="sage-tb-pill">
+          📊 {monthsWithData === null ? 'Loading data…' : `${monthsWithData} month${monthsWithData === 1 ? '' : 's'} of data loaded`}
+        </div>
       </div>
 
       <div className="sage-messages">
@@ -117,9 +132,8 @@ export function Suggestions() {
               <div className="msg-bubble">
                 <span className="bubble-tag">Welcome</span>
                 <br />
-                Hi! I'm <strong>Sage</strong>, your AI finance assistant. I have access to your spending data for
-                the last 2 months — ask me anything about your expenses, where your money is going, or how to
-                save more.
+                Hi! I'm <strong>Sage</strong>, your AI finance assistant. I have access to your spending data —
+                ask me anything about your expenses, where your money is going, or how to save more.
               </div>
               <span className="msg-time">{welcomeTime}</span>
             </div>
@@ -164,7 +178,7 @@ export function Suggestions() {
           {showStarters && (
             <div className="sage-starters">
               <span className="starters-label">Try asking</span>
-              {STARTERS.map((chip) => (
+              {starters.map((chip) => (
                 <button key={chip} className="sage-chip" onClick={() => send(chip.replace(/^\S+\s*/u, '').trim())}>
                   {chip}
                 </button>
