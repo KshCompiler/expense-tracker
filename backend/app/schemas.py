@@ -1,16 +1,96 @@
-from pydantic import BaseModel, ConfigDict
+from datetime import date as date_type, datetime
+from typing import Annotated
+
+from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, model_validator
+
+from app.constants import EMAIL_REGEX, VALID_CATEGORIES, VALID_INCOME_SOURCES
+
+
+def _check_email(v: str) -> str:
+    if not EMAIL_REGEX.match(v):
+        raise ValueError("Please enter a valid email address!")
+    return v
+
+
+def _check_password_length(v: str) -> str:
+    if len(v) < 8:
+        raise ValueError("Password must be at least 8 characters long!")
+    return v
+
+
+def _parse_amount(v) -> float:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        raise ValueError("Please enter a valid amount!")
+
+
+def _check_positive_amount(v: float) -> float:
+    if v <= 0:
+        raise ValueError("Amount must be greater than zero!")
+    return v
+
+
+def _parse_form_date(v):
+    if isinstance(v, str):
+        try:
+            return datetime.strptime(v, "%Y-%m-%d").date()
+        except ValueError:
+            raise ValueError("Please enter a valid date!")
+    return v
+
+
+def _check_category(v: str) -> str:
+    if v not in VALID_CATEGORIES:
+        raise ValueError("Please select a valid category!")
+    return v
+
+
+def _check_income_source(v: str) -> str:
+    if v not in VALID_INCOME_SOURCES:
+        raise ValueError("Please select a valid income source!")
+    return v
+
+
+Email = Annotated[str, AfterValidator(_check_email)]
+Password = Annotated[str, AfterValidator(_check_password_length)]
+PositiveAmount = Annotated[float, BeforeValidator(_parse_amount), AfterValidator(_check_positive_amount)]
+FormDate = Annotated[date_type, BeforeValidator(_parse_form_date)]
+Category = Annotated[str, AfterValidator(_check_category)]
+IncomeSource = Annotated[str, AfterValidator(_check_income_source)]
 
 
 class RegisterRequest(BaseModel):
     full_name: str
-    email: str
-    password: str
+    email: Email
+    password: Password
     confirm_password: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_required_and_match(cls, data):
+        if not isinstance(data, dict):
+            return data
+
+        if not data.get("full_name") or not data.get("email") or not data.get("password") or not data.get("confirm_password"):
+            raise ValueError("All fields are required!")
+        if data.get("password") != data.get("confirm_password"):
+            raise ValueError("Passwords do not match!")
+        return data
 
 
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_required(cls, data):
+        if not isinstance(data, dict):
+            return data
+        if not data.get("email") or not data.get("password"):
+            raise ValueError("Email and password are required!")
+        return data
 
 
 class UserOut(BaseModel):
@@ -32,10 +112,19 @@ class ProfileOut(BaseModel):
 
 
 class ExpenseIn(BaseModel):
-    amount: str
-    category: str
-    date: str
+    amount: PositiveAmount
+    category: Category
+    date: FormDate
     description: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_required(cls, data):
+        if not isinstance(data, dict):
+            return data
+        if not data.get("amount") or not data.get("category") or not data.get("date"):
+            raise ValueError("Amount, category, and date are required!")
+        return data
 
 
 class ExpenseOut(BaseModel):
@@ -51,10 +140,19 @@ class ExpenseOut(BaseModel):
 
 
 class IncomeIn(BaseModel):
-    amount: str
-    source: str
-    date: str
+    amount: PositiveAmount
+    source: IncomeSource
+    date: FormDate
     description: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_required(cls, data):
+        if not isinstance(data, dict):
+            return data
+        if not data.get("amount") or not data.get("source") or not data.get("date"):
+            raise ValueError("Amount, source, and date are required!")
+        return data
 
 
 class IncomeOut(BaseModel):
