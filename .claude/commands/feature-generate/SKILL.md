@@ -115,18 +115,18 @@ git checkout -b <branch_name>
 Read these files before writing the spec:
 
 * `CLAUDE.md`
-* `app.py`
-* `database/db.py`
+* `backend/app/main.py`, `backend/app/models.py`, `backend/app/schemas.py`
 * Every file inside `.claude/specs/`
+* The `frontend/src/pages/` and `frontend/src/components/` files most relevant to this feature, plus `frontend/src/index.css` for existing design tokens
 
 Use them to:
 
 * Understand the roadmap.
-* Follow existing conventions.
+* Follow existing conventions (FastAPI + SQLAlchemy + Pydantic backend, React + TypeScript frontend — see `CLAUDE.md` for the full architecture; this is not a Flask/Jinja app).
 * Avoid duplicate specs.
 * Verify the current database schema.
 
-Check `CLAUDE.md` to confirm the requested step is **not already completed**.
+Check `CLAUDE.md` and `.claude/specs/` to confirm the requested step is **not already completed**.
 
 If it is already marked complete:
 
@@ -149,14 +149,18 @@ One paragraph describing what this feature does and why it exists at this stage 
 
 ## Design
 
-Required whenever this feature adds or changes any UI (skip only if the feature is purely backend/data with no template changes — write `No UI changes.` instead).
+Required whenever this feature adds or changes any UI (skip only if the feature is purely backend/data with no frontend changes — write `No UI changes.` instead).
 
-Produce this using the same planning process as the `frontend-design` skill, formatted as:
+**The bar is: would a real user notice and like this, unprompted?** A good product is one that attracts and holds people — not one that merely works. Never write a Design section that a bored engineer would produce by default (a generic card grid, a plain progress bar, an unstyled table dump). Always invoke the `frontend-design` skill's own planning process to produce this section — do not freehand it — and hold its output to its own anti-genericness bar: no cookie-cutter SaaS-dashboard filler, no numbered 01/02/03 markers unless the content is genuinely sequential, no decoration that doesn't serve this specific feature's content.
 
-* **Palette** — named colors mapped to existing CSS variables (e.g. `Primary accent → var(--accent)`). Do not introduce new hex values; reuse tokens already defined in `static/css/style.css`.
+Format as:
+
+* **Palette** — named colors mapped to existing CSS variables (e.g. `Primary accent → var(--accent)`). Do not introduce new hex values; reuse tokens already defined in `frontend/src/index.css`.
 * **Typography** — role → font mapping, reusing `var(--font-display)` / `var(--font-body)` per role (display heading, body text, captions/data).
 * **Layout** — a one-sentence layout concept plus a small ASCII wireframe of the new/changed UI.
-* **Signature** — the one deliberate, memorable detail this feature's UI should be remembered by, consistent with Spendly's existing ledger/passbook aesthetic (serif display headings, hairline borders, green/terracotta accents).
+* **Signature** — the one deliberate, memorable detail this feature's UI should be remembered by, consistent with Spendly's existing ledger/passbook aesthetic (serif display headings, hairline borders, green/terracotta accents). This must be specific to what this feature actually does, not a generic flourish — if you can picture the same "signature" applying unchanged to a different feature, it isn't specific enough yet.
+
+Before finalizing this section, self-check it against the anti-defaults in the `frontend-design` skill (warm-cream-serif, near-black-neon-accent, broadsheet-hairline are defaults, not choices, when applied regardless of subject) and revise anything that reads as the generic answer rather than a decision made for this feature.
 
 ## Depends on
 
@@ -183,7 +187,7 @@ No new routes.
 
 ## Database changes
 
-Verify against `database/db.py`.
+Verify against `backend/app/models.py` (SQLAlchemy models) — this app uses SQLAlchemy, not raw SQL.
 
 Describe:
 
@@ -198,27 +202,27 @@ If none:
 No database changes.
 ```
 
-## Templates
+## Frontend components
 
 ### Create
 
-List every new template.
+List every new React component/page file (`frontend/src/pages/` or `frontend/src/components/`).
 
 ### Modify
 
-List every existing template and explain the required changes.
+List every existing component/page that needs changes and explain what changes.
 
 ## Files to change
 
-Every existing file that must be modified.
+Every existing file that must be modified (backend and frontend).
 
 ## Files to create
 
-Every new file required.
+Every new file required (backend and frontend).
 
 ## New dependencies
 
-List any required pip packages.
+List any required backend (`backend/requirements.txt`) or frontend (`frontend/package.json`) packages.
 
 If none:
 
@@ -232,21 +236,22 @@ Claude **must always** follow these rules:
 
 ### Backend
 
-* No SQLAlchemy or any ORM.
-* Use SQLite with parameterised queries only.
-* Passwords must always be hashed using `werkzeug.security`.
+* SQLAlchemy ORM + Pydantic schemas — never raw SQL string-formatting (parameterised queries are handled by the ORM already).
+* Passwords must always be hashed using Werkzeug's `generate_password_hash`/`check_password_hash` (see `backend/app/security.py`).
+* Every route declares a Pydantic `response_model` — never return a raw dict.
+* DB access belongs in `backend/app/crud.py`, never inline in routers.
 * Reuse existing helper functions whenever possible.
 * Keep code modular and maintainable.
 
 ### Frontend
 
-* **Whenever implementation of this spec is requested and it touches any template or UI, always invoke the built-in `frontend-design` skill before writing template/CSS code.** This applies every time — not just once per spec. Use it to fill in and refine the Design section above and to guide the actual markup/CSS.
-* All templates must extend `base.html`.
-* Use CSS variables only. Never hardcode hex color values.
+* **Never settle for the first, most obvious layout.** Boring is a failure mode here, not a safe default — a spec that ships a plain form/table/card grid with no point of view is the thing to avoid, not the thing to fall back on when unsure. If the Design section above wouldn't make someone stop and look twice, redo it before moving on to markup.
+* **Whenever implementation of this spec is requested and it touches any component or UI, always invoke the built-in `frontend-design` skill before writing component/CSS code.** This applies every time — not just once per spec, and not only when the user asks for it. Use it to fill in and refine the Design section above and to guide the actual markup/CSS.
+* Build React function components under `frontend/src/pages/` (routes) or `frontend/src/components/` (reusable pieces) — this is a React + TypeScript app, not server-rendered templates. New pages get wired into `App.tsx`'s `<Routes>`.
+* Use CSS variables only (from `frontend/src/index.css`). Never hardcode hex color values.
 * Build every page as production-ready, not as a prototype.
-* Follow modern SaaS dashboard design principles inspired by products like Stripe, Notion, GitHub, Vercel, and Linear.
-* Every page must have a clean, attractive, responsive, and professional UI.
-* Maintain consistent spacing, typography, colors, border radius, shadows, and component styling throughout the application.
+* Every page must have a clean, distinctive, responsive, professional UI that a real user would find inviting to use — attractiveness is a requirement, not a nice-to-have.
+* Maintain consistent spacing, typography, colors, border radius, shadows, and component styling throughout the application, matching Spendly's existing ledger/passbook aesthetic rather than introducing a new unrelated look.
 * Use reusable UI components whenever possible.
 
 ### Layout & Responsiveness
@@ -311,6 +316,6 @@ Title:     <feature_title>
 Then print:
 
 > Review the spec at `.claude/specs/<step_number>-<feature_slug>.md` then enter Plan Mode with Shift+Tab twice to begin implementation.
-> Note: when implementation touches any UI, the `frontend-design` skill will be invoked automatically before templates/CSS are written.
+> Note: when implementation touches any UI, the `frontend-design` skill will be invoked automatically before component/CSS code is written.
 
 Do **not** print the full spec in chat unless explicitly asked.

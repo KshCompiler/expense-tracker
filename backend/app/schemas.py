@@ -3,7 +3,15 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, model_validator
 
-from app.constants import EMAIL_REGEX, VALID_CATEGORIES, VALID_INCOME_SOURCES
+from app.constants import (
+    EMAIL_REGEX,
+    PASSWORD_DIGIT_REGEX,
+    PASSWORD_MIN_LENGTH,
+    PASSWORD_SPECIAL_REGEX,
+    PASSWORD_UPPERCASE_REGEX,
+    VALID_CATEGORIES,
+    VALID_INCOME_SOURCES,
+)
 
 
 def _check_email(v: str) -> str:
@@ -12,9 +20,18 @@ def _check_email(v: str) -> str:
     return v
 
 
-def _check_password_length(v: str) -> str:
-    if len(v) < 8:
-        raise ValueError("Password must be at least 8 characters long!")
+def _check_password_strength(v: str) -> str:
+    unmet = []
+    if len(v) < PASSWORD_MIN_LENGTH:
+        unmet.append("be at least 8 characters long")
+    if not PASSWORD_UPPERCASE_REGEX.search(v):
+        unmet.append("contain an uppercase letter")
+    if not PASSWORD_DIGIT_REGEX.search(v):
+        unmet.append("contain a number")
+    if not PASSWORD_SPECIAL_REGEX.search(v):
+        unmet.append("contain a special character")
+    if unmet:
+        raise ValueError("Password must " + ", ".join(unmet) + "!")
     return v
 
 
@@ -53,7 +70,7 @@ def _check_income_source(v: str) -> str:
 
 
 Email = Annotated[str, AfterValidator(_check_email)]
-Password = Annotated[str, AfterValidator(_check_password_length)]
+Password = Annotated[str, AfterValidator(_check_password_strength)]
 PositiveAmount = Annotated[float, BeforeValidator(_parse_amount), AfterValidator(_check_positive_amount)]
 FormDate = Annotated[date_type, BeforeValidator(_parse_form_date)]
 Category = Annotated[str, AfterValidator(_check_category)]

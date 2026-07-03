@@ -91,9 +91,9 @@ def test_cannot_access_another_users_expense(client, new_user_client):
     email = f"owner-check-{uuid.uuid4().hex[:10]}@test.com"
     client.post(
         "/api/auth/register",
-        json={"full_name": "User B", "email": email, "password": "password123", "confirm_password": "password123"},
+        json={"full_name": "User B", "email": email, "password": "Password123!", "confirm_password": "Password123!"},
     )
-    client.post("/api/auth/login", json={"email": email, "password": "password123"})
+    client.post("/api/auth/login", json={"email": email, "password": "Password123!"})
 
     resp = client.get(f"/api/expenses/{expense_id}")
     assert resp.status_code == 404
