@@ -53,7 +53,82 @@ def test_register_rejects_short_password(client):
         },
     )
     assert resp.status_code == 400
-    assert resp.json()["detail"] == "Password must be at least 8 characters long!"
+    assert (
+        resp.json()["detail"]
+        == "Password must be at least 8 characters long, contain an uppercase letter, contain a special character!"
+    )
+
+
+def test_register_rejects_password_missing_uppercase(client):
+    resp = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "Test",
+            "email": _unique_email(),
+            "password": "password123!",
+            "confirm_password": "password123!",
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Password must contain an uppercase letter!"
+
+
+def test_register_rejects_password_missing_digit(client):
+    resp = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "Test",
+            "email": _unique_email(),
+            "password": "Password!",
+            "confirm_password": "Password!",
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Password must contain a number!"
+
+
+def test_register_rejects_password_missing_special(client):
+    resp = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "Test",
+            "email": _unique_email(),
+            "password": "Password123",
+            "confirm_password": "Password123",
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Password must contain a special character!"
+
+
+def test_register_rejects_password_missing_multiple_conditions(client):
+    resp = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "Test",
+            "email": _unique_email(),
+            "password": "password",
+            "confirm_password": "password",
+        },
+    )
+    assert resp.status_code == 400
+    assert (
+        resp.json()["detail"]
+        == "Password must contain an uppercase letter, contain a number, contain a special character!"
+    )
+
+
+def test_register_accepts_strong_password(client):
+    resp = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "Test",
+            "email": _unique_email(),
+            "password": "Password123!",
+            "confirm_password": "Password123!",
+        },
+    )
+    assert resp.status_code == 201
 
 
 def test_register_rejects_duplicate_email(client):
@@ -61,8 +136,8 @@ def test_register_rejects_duplicate_email(client):
     payload = {
         "full_name": "Test",
         "email": email,
-        "password": "password123",
-        "confirm_password": "password123",
+        "password": "Password123!",
+        "confirm_password": "Password123!",
     }
     first = client.post("/api/auth/register", json=payload)
     assert first.status_code == 201
@@ -85,11 +160,11 @@ def test_register_then_login_flow(client):
         json={
             "full_name": "Flow User",
             "email": email,
-            "password": "password123",
-            "confirm_password": "password123",
+            "password": "Password123!",
+            "confirm_password": "Password123!",
         },
     )
-    login_resp = client.post("/api/auth/login", json={"email": email, "password": "password123"})
+    login_resp = client.post("/api/auth/login", json={"email": email, "password": "Password123!"})
     assert login_resp.status_code == 200
     assert login_resp.json()["email"] == email
 

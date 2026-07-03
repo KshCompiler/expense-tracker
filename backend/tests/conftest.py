@@ -39,13 +39,13 @@ def new_user_client(client):
         json={
             "full_name": "Test User",
             "email": email,
-            "password": "password123",
-            "confirm_password": "password123",
+            "password": "Password123!",
+            "confirm_password": "Password123!",
         },
     )
     assert resp.status_code == 201, resp.text
 
-    resp = client.post("/api/auth/login", json={"email": email, "password": "password123"})
+    resp = client.post("/api/auth/login", json={"email": email, "password": "Password123!"})
     assert resp.status_code == 200, resp.text
 
     yield client
