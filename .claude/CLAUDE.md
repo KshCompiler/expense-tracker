@@ -91,8 +91,8 @@ expense-tracker/
 ## Architecture Overview
 
 - **Backend**: FastAPI, routers per feature area under `backend/app/routers/`, SQLAlchemy models + Pydantic schemas, sync engine (no async DB driver — routes are plain `def`, not `async def`, except the OCR routes which do async file reads).
-- **Auth**: JWT access token in an **httpOnly, SameSite=Strict** cookie, set on `POST /api/auth/login`, cleared on `POST /api/auth/logout`. `get_current_user` (in `deps.py`) is a shared FastAPI dependency injected into every protected route — there is no per-route copy-pasted auth check.
-- **CSRF**: Not needed and not implemented — `SameSite=Strict` on the auth cookie blocks cross-site requests from ever carrying it. Do not reintroduce a CSRF token scheme without reconsidering the auth model as a whole.
+- **Auth**: JWT access token in an **httpOnly** cookie, set on `POST /api/auth/login`, cleared on `POST /api/auth/logout`. `get_current_user` (in `deps.py`) is a shared FastAPI dependency injected into every protected route — there is no per-route copy-pasted auth check. Cookie `SameSite`/`Secure` flags are configurable via `COOKIE_SAMESITE` (default `strict`) and `COOKIE_SECURE` (default `false`) — see "Deploying frontend/backend on different domains" below.
+- **CSRF**: Not implemented as a per-form token scheme, deliberately. When `COOKIE_SAMESITE=strict` (same-origin deployments), the cookie itself blocks cross-site requests from ever carrying it, so CSRF isn't reachable. When `COOKIE_SAMESITE=none` (cross-origin deployments, e.g. Vercel + Railway), that protection is gone and the defense shifts to `CORS_ORIGINS`: the backend must allow only the exact frontend origin, and browsers refuse to complete preflighted cross-origin `POST`/`PUT`/`DELETE` requests (all JSON bodies and all non-GET methods here trigger a preflight) from origins outside that allowlist. Never set `CORS_ORIGINS` to `*` when `COOKIE_SAMESITE=none`. Do not reintroduce a hand-rolled CSRF token scheme without reconsidering the auth model as a whole.
 - **Password hashing**: Werkzeug's `generate_password_hash`/`check_password_hash` (scrypt) — a plain pip package, usable outside Flask.
 - **Database**: SQLite (`users`, `expenses`, `income` tables). FK enforcement is manual — SQLite foreign keys are off by default; `backend/app/database.py` registers a `PRAGMA foreign_keys = ON` on every new connection via a SQLAlchemy `connect` event.
 - **OCR bill-scanning**: `POST /api/expenses/extract-bill` and `/api/income/extract-bill` accept an `UploadFile`, validate size/magic-bytes server-side (never trusting `Content-Type`), call Groq's vision model via the `openai` package, and **re-validate every field the model returns** before sending it back — the model's output only pre-fills the frontend form and is never trusted or auto-saved.
@@ -100,6 +100,7 @@ expense-tracker/
 - **Frontend routing**: `react-router-dom`, pages under `frontend/src/pages/`, `ProtectedRoute` wraps anything requiring auth (redirects to `/login` if `AuthContext` has no user).
 - **Frontend state/data-fetching**: Plain `fetch` via `api/client.ts` + React state/Context — no TanStack Query or Redux. This app is small enough that the extra layer isn't worth it; don't add one without a clear need.
 - **Ports**: Backend runs on **port 5001** — don't change this. The Vite dev server runs on its default (5173) and proxies `/api/*` to the backend — if you change one port, update the other (`vite.config.ts` proxy target / CORS origins in backend config).
+- **API base URL**: `frontend/src/api/client.ts` prefixes every request with `import.meta.env.VITE_API_URL` (empty by default). Locally this stays unset and requests hit the Vite proxy at a relative `/api/...` path. In production, if the frontend and backend are on different domains, `VITE_API_URL` must be set to the backend's absolute origin at build time (a Vercel env var, not a committed file).
 
 ## Common Tasks
 
@@ -113,6 +114,9 @@ expense-tracker/
 - All database operations use parameterized queries / the SQLAlchemy ORM — never string-format SQL.
 - Toasts are the single feedback mechanism on the frontend (`ToastContext` + `ToastContainer`).
 - When deploying to production: set a real `SECRET_KEY` env var (not the `dev-...` default), set `COOKIE_SECURE=true` (requires HTTPS), and set `CORS_ORIGINS` to the real frontend origin(s).
+- **Deploying frontend/backend on different domains** (e.g. frontend on Vercel, backend on Railway): the two hosts are cross-origin, so this needs more than the single-host settings above.
+  - Backend (Railway): set `COOKIE_SAMESITE=none` (requires `COOKIE_SECURE=true`, which HTTPS deployments need anyway) so the browser attaches the auth cookie to cross-site API calls, and set `CORS_ORIGINS` to the exact Vercel URL. `Settings` validates at startup that `COOKIE_SAMESITE=none` is never paired with `COOKIE_SECURE=false`.
+  - Frontend (Vercel): set `VITE_API_URL` to the Railway backend's URL as a Vercel project env var.
 
 ## Warnings and things to avoid
 
@@ -123,5 +127,5 @@ expense-tracker/
 - Don't reintroduce a JS framework's competing state-management library (Redux, MobX, etc.) or a data-fetching library (TanStack Query, SWR) without a clear need — see "Frontend state/data-fetching" above.
 - FK enforcement is manual — SQLite foreign keys are off by default; any new raw connection must run `PRAGMA foreign_keys = ON` (already handled centrally in `backend/app/database.py` for the SQLAlchemy engine).
 - The backend runs on port 5001, not FastAPI/uvicorn's implicit default — don't change this without updating the frontend proxy config too.
-- CSRF is handled via `SameSite=Strict` httpOnly cookies, not per-form tokens — do not reintroduce a hand-rolled CSRF token scheme without reconsidering the auth model as a whole.
+- CSRF is handled via `SameSite` httpOnly cookies (or, when cross-origin, a locked-down `CORS_ORIGINS`), not per-form tokens — do not reintroduce a hand-rolled CSRF token scheme without reconsidering the auth model as a whole. Never set `COOKIE_SAMESITE=none` without also restricting `CORS_ORIGINS` to the real frontend origin(s) — a wildcard CORS origin combined with `SameSite=none` reopens CSRF.
 - Don't weaken the OCR route's server-side re-validation of model output (amount > 0, category/source exact-match, date format, description length cap) — the model's output is never trusted as final.

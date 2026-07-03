@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import model_validator
 
 # Reuse the same SQLite file the original Flask app used, at the repo root
 # (backend/app/config.py -> parents[2] is the repo root).
@@ -21,6 +22,12 @@ class Settings(BaseSettings):
     # Only set this true when the app is actually served over HTTPS - browsers
     # silently drop Secure cookies on plain HTTP (including local dev and tests).
     cookie_secure: bool = False
+    # "strict" for same-origin deployments (frontend and backend behind the same
+    # domain, e.g. via the Vite dev proxy). Cross-origin deployments (e.g.
+    # frontend on Vercel, backend on Railway) must use "none" so the browser
+    # attaches the cookie to cross-site API calls - which requires cookie_secure
+    # to also be true, since browsers drop SameSite=None cookies without Secure.
+    cookie_samesite: str = "strict"
 
     @property
     def database_url(self) -> str:
@@ -29,6 +36,12 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @model_validator(mode="after")
+    def _validate_cookie_flags(self) -> "Settings":
+        if self.cookie_samesite == "none" and not self.cookie_secure:
+            raise ValueError("cookie_secure must be true when cookie_samesite is 'none'")
+        return self
 
 
 settings = Settings()

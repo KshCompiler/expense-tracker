@@ -1,3 +1,9 @@
+// In production the frontend (Vercel) and backend (Railway) are on different
+// origins, so requests need an absolute URL. Set VITE_API_URL to the backend's
+// origin (e.g. https://spendly-api.up.railway.app) in that case. Locally this
+// is left unset and requests go through the Vite dev server's /api proxy.
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+
 export class ApiError extends Error {
   status: number;
 
@@ -19,7 +25,7 @@ async function extractErrorMessage(response: Response): Promise<string> {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(`${API_BASE_URL}/api${path}`, {
     credentials: 'include',
     headers:
       options.body && !(options.body instanceof FormData)
