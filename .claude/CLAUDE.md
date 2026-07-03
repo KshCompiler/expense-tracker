@@ -2,113 +2,126 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Spendly is a FastAPI (backend) + React (frontend) expense tracker.
+
 ## Development Commands
 
-### Setup
+### Backend setup
 1. Create a virtual environment (if not already present):
    ```bash
+   cd backend
    python -m venv venv
    ```
-2. Activate the virtual environment:
-   - On Windows: `venv\Scripts\activate`
-   - On macOS/Linux: `source venv/bin/activate`
+2. Activate it:
+   - Windows: `venv\Scripts\activate`
+   - macOS/Linux: `source venv/bin/activate`
 3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
+4. Copy `.env.example` to `.env` at the repo root and set `GROQ_API_KEY` and `SECRET_KEY`.
 
-### Running the Application
-- Start the Flask development server:
-  ```bash
-  python app.py
-  ```
-  The app will be available at http://localhost:5001.
+### Frontend setup
+```bash
+cd frontend
+npm install
+```
 
-- Alternatively, using Flask CLI:
-  ```bash
-  export FLASK_APP=app.py   # set FLASK_APP=app.py on Windows
-  flask run --port=5001
-  ```
+### Running the application
+Run both processes concurrently, in separate terminals:
+```bash
+# Terminal 1 - backend (port 5001)
+cd backend
+venv\Scripts\activate   # or: source venv/bin/activate
+uvicorn app.main:app --reload --port 5001
+
+# Terminal 2 - frontend (Vite dev server, port 5173)
+cd frontend
+npm run dev
+```
+The Vite dev server proxies `/api/*` requests to `http://localhost:5001` (see `frontend/vite.config.ts`), so the app is used at **http://localhost:5173**. Swagger/OpenAPI docs for the backend are at `http://localhost:5001/docs`.
 
 ### Testing
-- Run the test suite with pytest:
-  ```bash
-  pytest
-  ```
-- To run a specific test file:
-  ```bash
-  pytest tests/test_specific.py
-  ```
+- Backend: `cd backend && pytest` (40+ tests covering auth, expenses/income CRUD, dashboard, transactions filtering, OCR field-validation with a mocked LLM, and chat).
+- Frontend: no test suite yet — verify changes via `npm run dev` and the browser, and `npx tsc --noEmit` for type errors.
 
-  ### agents
-  always run builtin in agent for building plan
-  always run builit in subagent for reading files
-  always run required built in agent for the task
+### Agents
+- Use the built-in Plan agent to build implementation plans for non-trivial work.
+- Use a built-in subagent (e.g. Explore) to read files/investigate the codebase rather than reading everything in the main context.
+- Use the relevant built-in agent type for a given task where one fits (e.g. test-runner, test-case-writer) rather than doing it ad hoc.
 
-### Database Management
-- The database is initialized automatically when the app starts via `init_db()` in `app.py`.
-- To manually initialize or recreate the database, you can run:
-  ```bash
-  python -c "from database.db import init_db; init_db()"
-  ```
-- The SQLite database file is `expense_tracker.db` in the project root.
+### Database management
+- Tables are created automatically on backend startup via `Base.metadata.create_all()` in `backend/app/main.py`'s lifespan handler, followed by `crud.seed_db()` which seeds a demo user (`demo@spendly.com` / `demo123`) if the `users` table is empty.
+- The SQLite database file is `expense_tracker.db` in the repo root (shared file path resolved in `backend/app/config.py`).
+- To reset: stop the backend, delete `expense_tracker.db`, restart — it will be recreated and reseeded.
 
 ## Project Structure
 
 ```
 expense-tracker/
-├── app.py                 # Main Flask application
-├── requirements.txt       # Python dependencies
-├── expense_tracker.db     # SQLite database (generated)
-├── static/                # Static assets (CSS, JavaScript)
-│   ├── css/
-│   │   └── style.css
-│   └── js/
-├── templates/             # HTML templates for Flask rendering
-│   ├── landing.html
-│   ├── login.html
-│   └── register.html
-├── database/
-│   ├── db.py              # Database helper functions (get_db, init_db, close_db)
-│   └── __init__.py
-└── venv/                  # Virtual environment (created during setup)
+├── backend/                    # FastAPI application
+│   ├── app/
+│   │   ├── main.py             # FastAPI app, CORS, request-size limit, router includes, lifespan (create tables + seed)
+│   │   ├── config.py           # Settings (pydantic-settings): SECRET_KEY, GROQ_API_KEY, DB path, CORS origins, cookie flags
+│   │   ├── database.py         # SQLAlchemy engine/session, PRAGMA foreign_keys=ON on connect
+│   │   ├── models.py           # SQLAlchemy models: User, Expense, Income
+│   │   ├── schemas.py          # Pydantic request/response schemas
+│   │   ├── security.py         # Password hashing (Werkzeug scrypt) + JWT cookie auth
+│   │   ├── deps.py             # get_db / get_current_user FastAPI dependencies
+│   │   ├── crud.py             # All DB access/query logic
+│   │   ├── validation.py       # Shared expense/income field-validation
+│   │   ├── constants.py        # VALID_CATEGORIES, VALID_INCOME_SOURCES, OCR limits, request-body size cap
+│   │   └── routers/            # auth, dashboard, expenses, income, transactions, ocr, profile, chat
+│   ├── tests/                  # pytest suite (fresh throwaway SQLite DB per test session, mocked Groq/OpenAI client for OCR/chat tests)
+│   ├── requirements.txt
+│   └── .env.example
+├── frontend/                   # React + TypeScript + Vite application
+│   ├── vite.config.ts          # Dev server + /api proxy to localhost:5001
+│   └── src/
+│       ├── api/client.ts       # Central fetch wrapper (credentials: 'include', JSON, ApiError)
+│       ├── context/            # AuthContext (current user via /api/auth/me), ToastContext
+│       ├── components/         # Navbar, ProtectedRoute, ToastContainer, CategoryTilePicker, BillUploadDropzone, TrendChart
+│       ├── pages/               # One component per route, each with its own .css where needed
+│       ├── types/index.ts      # Shared TS types mirroring backend Pydantic schemas
+│       └── index.css           # Global design tokens + shared component styles
+├── expense_tracker.db          # SQLite database (generated)
+└── .env                        # GROQ_API_KEY, SECRET_KEY, etc. (gitignored)
 ```
 
 ## Architecture Overview
 
-- **Framework**: Flask web application.
-- **Database**: SQLite with SQLAlchemy-like row factory for convenient access.
-- **Database Connection**: Managed via Flask's `g` object; connections are opened per request and closed automatically using `teardown_appcontext`.
-- **Models**: Defined via raw SQL in `database/db.py` (`init_db` function). Includes `users` and `expenses` tables.
-- **Routing**: 
-  - `/` – Landing page.
-  - `/register` – User registration (GET/POST).
-  - `/login` – Login page (placeholder).
-  - Additional placeholder routes for logout, profile, expense management (to be implemented in later steps).
-- **Template Engine**: Jinja2 (default with Flask).
-- **Static Files**: Served from the `static/` directory.
-- **Security**: Uses a hardcoded secret key for session/flash messages; **must be changed** in production.
-- **Environment**: Runs on port 5001 with debug enabled in development.
+- **Backend**: FastAPI, routers per feature area under `backend/app/routers/`, SQLAlchemy models + Pydantic schemas, sync engine (no async DB driver — routes are plain `def`, not `async def`, except the OCR routes which do async file reads).
+- **Auth**: JWT access token in an **httpOnly, SameSite=Strict** cookie, set on `POST /api/auth/login`, cleared on `POST /api/auth/logout`. `get_current_user` (in `deps.py`) is a shared FastAPI dependency injected into every protected route — there is no per-route copy-pasted auth check.
+- **CSRF**: Not needed and not implemented — `SameSite=Strict` on the auth cookie blocks cross-site requests from ever carrying it. Do not reintroduce a CSRF token scheme without reconsidering the auth model as a whole.
+- **Password hashing**: Werkzeug's `generate_password_hash`/`check_password_hash` (scrypt) — a plain pip package, usable outside Flask.
+- **Database**: SQLite (`users`, `expenses`, `income` tables). FK enforcement is manual — SQLite foreign keys are off by default; `backend/app/database.py` registers a `PRAGMA foreign_keys = ON` on every new connection via a SQLAlchemy `connect` event.
+- **OCR bill-scanning**: `POST /api/expenses/extract-bill` and `/api/income/extract-bill` accept an `UploadFile`, validate size/magic-bytes server-side (never trusting `Content-Type`), call Groq's vision model via the `openai` package, and **re-validate every field the model returns** before sending it back — the model's output only pre-fills the frontend form and is never trusted or auto-saved.
+- **Dashboard data**: The backend returns raw numbers only (`monthly_trend: [{year_month, label, total}]` etc.) — there is no server-side chart/SVG generation. `frontend/src/components/TrendChart.tsx` (Recharts) renders it client-side.
+- **Frontend routing**: `react-router-dom`, pages under `frontend/src/pages/`, `ProtectedRoute` wraps anything requiring auth (redirects to `/login` if `AuthContext` has no user).
+- **Frontend state/data-fetching**: Plain `fetch` via `api/client.ts` + React state/Context — no TanStack Query or Redux. This app is small enough that the extra layer isn't worth it; don't add one without a clear need.
+- **Ports**: Backend runs on **port 5001** — don't change this. The Vite dev server runs on its default (5173) and proxies `/api/*` to the backend — if you change one port, update the other (`vite.config.ts` proxy target / CORS origins in backend config).
 
 ## Common Tasks
 
-- **Adding a new route**: Edit `app.py`, add a new `@app.route` decorator and corresponding view function. Create a template in `templates/` if needed.
-- **Modifying the database schema**: Edit the `CREATE TABLE` statements in `database/db.py::init_db()`. Remember to handle migrations appropriately (currently uses `CREATE TABLE IF NOT EXISTS`).
-- **Adding static assets**: Place CSS in `static/css/`, JavaScript in `static/js/`, and reference them in templates with `url_for('static', filename='css/style.css')`.
-- **Running linting/formatting**: Not configured by default; you can add tools like `flake8` or `black` to `requirements.txt` as needed.
+- **Adding a new backend endpoint**: Add a router function in the relevant `backend/app/routers/*.py` file (or a new router, included in `main.py`), a Pydantic schema in `schemas.py` if needed, and a `crud.py` function for any DB access. Always declare a `response_model=` — never return a raw dict.
+- **Adding a new frontend page**: Add a component under `frontend/src/pages/`, wire it into `App.tsx`'s `<Routes>` (wrap in `<ProtectedRoute>` if it needs auth), and call the backend through `api/client.ts` — never hardcode a `fetch('/api/...')` call outside that module.
+- **Modifying the database schema**: Add/edit the SQLAlchemy model in `backend/app/models.py`. There's no migration tool wired up (tutorial-scale app) — for schema changes beyond additive columns, delete `expense_tracker.db` and let it be recreated/reseeded.
+- **Shared category/source tiles**: Category and income-source options (with icon/color) live in `frontend/src/components/categoryTiles.ts` — update there, not per-page, if you add/remove a category.
 
 ## Notes
 
-- The application is structured for a tutorial where students implement features incrementally (as indicated by placeholder comments).
-- All database operations use parameterized queries to prevent SQL injection.
-- Flash messages are used for user feedback; ensure templates display them (they are expected to be present in base templates).
-- When deploying to production, set `app.secret_key` from an environment variable and disable debug mode.
-Warnings and things to avoid
-Never use raw string returns for stub routes once a step is implemented — always render a template
-Never hardcode URLs in templates — always use url_for()
-Never put DB logic in route functions — it belongs in database/db.py
-Never install new packages mid-feature without flagging it — keep requirements.txt in sync
-Never use JS frameworks — the frontend is intentionally vanilla
-database/db.py is currently empty — do not assume helpers exist until the step that implements them
-FK enforcement is manual — SQLite foreign keys are off by default; get_db() must run PRAGMA foreign_keys = ON on every connection
-The app runs on port 5001, not the Flask default 5000 — don't change this
+- All database operations use parameterized queries / the SQLAlchemy ORM — never string-format SQL.
+- Toasts are the single feedback mechanism on the frontend (`ToastContext` + `ToastContainer`).
+- When deploying to production: set a real `SECRET_KEY` env var (not the `dev-...` default), set `COOKIE_SECURE=true` (requires HTTPS), and set `CORS_ORIGINS` to the real frontend origin(s).
+
+## Warnings and things to avoid
+
+- Never return a raw dict from a FastAPI route — always declare and use a Pydantic `response_model`.
+- Never hardcode API URLs in React components — always go through `frontend/src/api/client.ts`.
+- Never put DB logic in router functions — it belongs in `backend/app/crud.py`.
+- Never install new packages mid-feature without flagging it — keep `backend/requirements.txt` and `frontend/package.json` in sync with what's actually used.
+- Don't reintroduce a JS framework's competing state-management library (Redux, MobX, etc.) or a data-fetching library (TanStack Query, SWR) without a clear need — see "Frontend state/data-fetching" above.
+- FK enforcement is manual — SQLite foreign keys are off by default; any new raw connection must run `PRAGMA foreign_keys = ON` (already handled centrally in `backend/app/database.py` for the SQLAlchemy engine).
+- The backend runs on port 5001, not FastAPI/uvicorn's implicit default — don't change this without updating the frontend proxy config too.
+- CSRF is handled via `SameSite=Strict` httpOnly cookies, not per-form tokens — do not reintroduce a hand-rolled CSRF token scheme without reconsidering the auth model as a whole.
+- Don't weaken the OCR route's server-side re-validation of model output (amount > 0, category/source exact-match, date format, description length cap) — the model's output is never trusted as final.

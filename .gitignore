@@ -7,3 +7,6 @@ __pycache__/
 .DS_Store
 .claude/plans/
 spendly.db
+node_modules/
+frontend/dist/
+.pytest_cache/
