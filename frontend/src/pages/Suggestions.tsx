@@ -10,12 +10,34 @@ interface DisplayMessage {
   time: string;
 }
 
-const ALL_STARTERS = [
-  '📊 Where am I spending the most?',
-  '📅 Compare my last two months',
-  '💡 How can I save money?',
-  '⚠️ Am I overspending?',
+interface StarterCandidate {
+  text: string;
+  isEligible: (data: DashboardData) => boolean;
+}
+
+const STARTER_COUNT = 4;
+
+const STARTER_POOL: StarterCandidate[] = [
+  { text: '📅 How does this month compare to last month?', isEligible: (d) => d.monthly_trend.filter((p) => p.total > 0).length >= 2 },
+  { text: '🔍 Why did my spending change this month?', isEligible: (d) => d.monthly_trend.filter((p) => p.total > 0).length >= 2 },
+  { text: '📈 Where did my spending go up the most?', isEligible: (d) => d.monthly_trend.filter((p) => p.total > 0).length >= 2 },
+  { text: '⚠️ Am I spending more than I earn?', isEligible: (d) => d.total_income > 0 && d.total_expenses > 0 },
+  { text: '🏷️ Where should I cut back?', isEligible: (d) => d.categories.length > 0 },
+  { text: '😅 Should I be worried about my spending this month?', isEligible: (d) => d.total_income > 0 && d.total_expenses > 0 },
+  { text: '💰 Am I saving anything this month?', isEligible: (d) => d.total_income > 0 && d.total_expenses > 0 },
+  { text: '📉 Is my spending trending up or down?', isEligible: (d) => d.monthly_trend.filter((p) => p.total > 0).length >= 2 },
+  { text: '📆 Is my spending pretty consistent, or does it swing a lot?', isEligible: (d) => d.monthly_trend.filter((p) => p.total > 0).length >= 2 },
+  { text: '🕵️ Is there anything surprising in my spending this month?', isEligible: (d) => d.monthly_trend.filter((p) => p.total > 0).length >= 2 },
 ];
+
+function pickRandomStarters(data: DashboardData): string[] {
+  const eligible = STARTER_POOL.filter((c) => c.isEligible(data)).map((c) => c.text);
+  for (let i = eligible.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+  return eligible.slice(0, STARTER_COUNT);
+}
 
 function formatTime(d: Date) {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -47,6 +69,7 @@ export function Suggestions() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [welcomeTime] = useState(() => formatTime(new Date()));
   const [monthsWithData, setMonthsWithData] = useState<number | null>(null);
+  const [starters, setStarters] = useState<string[]>([]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -55,14 +78,12 @@ export function Suggestions() {
   useEffect(() => {
     api
       .get<DashboardData>('/dashboard')
-      .then((data) => setMonthsWithData(data.monthly_trend.filter((point) => point.total > 0).length))
+      .then((data) => {
+        setMonthsWithData(data.monthly_trend.filter((point) => point.total > 0).length);
+        setStarters(pickRandomStarters(data));
+      })
       .catch(() => setMonthsWithData(0));
   }, []);
-
-  const starters =
-    monthsWithData !== null && monthsWithData >= 2
-      ? ALL_STARTERS
-      : ALL_STARTERS.filter((chip) => !chip.includes('Compare my last two months'));
 
   const send = async (message: string) => {
     const trimmed = message.trim();
