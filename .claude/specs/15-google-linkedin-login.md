@@ -9,9 +9,9 @@ Spendly currently only supports email/password authentication. This feature adds
 **Palette**
 * Card / page background → `var(--paper)`, `var(--paper-card)` (unchanged — same shell as Login/Register)
 * Divider rule + provider row borders (idle) → `var(--border)`
-* Google row hover fill / border → `var(--accent-light)` / `var(--accent)`
-* LinkedIn row hover fill / border → `var(--accent-2-light)` / `var(--accent-2)`
-* Seal icon ink + row label text → `var(--ink)`, `var(--ink-soft)`
+* Google row → each provider now uses its own official brand colors rather than Spendly's palette (see note below), since the request is for immediately recognizable provider buttons, not ledger-tinted rows
+* Google button → white/`var(--paper-card)` background, neutral grey border, official multi-color "G" mark, dark grey label text
+* LinkedIn button → LinkedIn blue (`#0A66C2`) background, white "in" mark and label text, darker blue (`#004182`) on hover
 * Divider caption text → `var(--ink-muted)`
 
 **Typography**
@@ -30,10 +30,10 @@ One sentence: below the existing password-login form, a single hairline "endorse
 │   ┄┄┄┄┄  OR VERIFY WITH  ┄┄┄┄┄  │  ← hairline rule + small-caps caption
 │                                 │
 │  ┌───┐                         │
-│  │ G │  Continue with Google →│  ← bordered "seal" + row; hover tints accent-light
+│  │ G │  Continue with Google →│  ← white button, grey border, real multi-color G logo
 │  └───┘                         │
 │  ┌───┐                         │
-│  │in │  Continue with LinkedIn→│  ← hover tints accent-2-light (terracotta)
+│  │in │  Continue with LinkedIn→│  ← solid LinkedIn-blue button, white "in" mark
 │  └───┘                         │
 └───────────────────────────────┘
 ```
@@ -42,9 +42,7 @@ Same treatment appears on Register.tsx below its "Create account" button.
 
 **Signature**
 
-The "seal": Google's and LinkedIn's marks are drawn as flat, single-color ink glyphs inside a small hairline-bordered square (`var(--radius-sm)`), the same visual register as the ink-stamp motif already established by the forgot-password flow — not full-color brand badges. It reads as "another way to endorse your identity in the ledger," not a generic row of social icons. Resting state stays quiet (hairline border, no fill); each row only tints toward its provider's accent on hover/focus, so the page's usual restraint holds until the user actually reaches for one.
-
-Self-check: this deliberately avoids the generic "two pill buttons side-by-side with full-color logos" social-login pattern. It reuses Spendly's own established stamp/ledger-row vocabulary instead of introducing a new visual language, and the one new element (the seal square) is specific to what this feature actually is — an alternate identity endorsement, not a decorative flourish.
+Reversed from the original ink-seal concept at the user's explicit request: recognizability of each provider's own brand now matters more than matching Spendly's ledger palette for this one control. Google and LinkedIn's official button colors/marks are used as-is (per each provider's own brand guidelines) rather than being restyled into Spendly's green/terracotta accents. Layout (full-width stacked rows, divider, spacing, `var(--radius-sm)` corners) is unchanged from the original design — only the fill/border/icon coloring of the two rows changed.
 
 ## Depends on
 
@@ -124,8 +122,9 @@ Claude **must always** follow these rules:
 * **Whenever implementation of this spec is requested and it touches any component or UI, always invoke the built-in `frontend-design` skill before writing component/CSS code.**
 * `OAuthButtons.tsx` is a shared component under `frontend/src/components/` — Login and Register both use it, not copies of the same markup.
 * Use CSS variables only (from `frontend/src/index.css`). Never hardcode hex color values.
+  (Exception: the Google/LinkedIn button colors and logo marks are fixed by each provider's own brand guidelines, not part of Spendly's design system, so those specific hex values are hardcoded in `.oauth-row--google`/`.oauth-row--linkedin` rather than mapped to app tokens.)
 * Never hardcode an API path in a component — go through the new `getOAuthUrl` helper in `api/client.ts`.
-* Every page must remain clean, distinctive, responsive, and consistent with Spendly's ledger/passbook aesthetic — no generic full-color social-login badges.
+* Every page must remain clean, distinctive, responsive, and consistent with Spendly's ledger/passbook aesthetic — the OAuth buttons are the one deliberate exception, using each provider's official brand colors so they're instantly recognizable.
 
 ### Layout & Responsiveness
 

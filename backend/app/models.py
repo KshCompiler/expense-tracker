@@ -1,4 +1,4 @@
-from sqlalchemy import Float, ForeignKey, Integer, String, text
+from sqlalchemy import Float, ForeignKey, Integer, String, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -10,9 +10,25 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    # Nullable because an account created purely via Google/LinkedIn OAuth
+    # never sets a Spendly password (unless it later goes through Forgot
+    # Password, which just assigns one regardless of the prior value).
+    password_hash: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[str] = mapped_column(String, server_default=text("(datetime('now'))"))
     updated_at: Mapped[str] = mapped_column(String, server_default=text("(datetime('now'))"))
+
+
+class OAuthAccount(Base):
+    __tablename__ = "oauth_accounts"
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_user_id", name="uq_oauth_accounts_provider_user"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    provider: Mapped[str] = mapped_column(String, nullable=False)
+    provider_user_id: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[str] = mapped_column(String, server_default=text("(datetime('now'))"))
 
 
 class Expense(Base):

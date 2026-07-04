@@ -53,3 +53,10 @@ export const api = {
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
   postForm: <T>(path: string, formData: FormData) => request<T>(path, { method: 'POST', body: formData }),
 };
+
+// Builds the URL for an OAuth provider's login redirect. This is a full-page
+// navigation (an <a href>, not a fetch call), since the browser must follow
+// the provider's own consent screen - so it deliberately bypasses request().
+export function getOAuthUrl(provider: 'google' | 'linkedin'): string {
+  return `${API_BASE_URL}/api/auth/${provider}/login`;
+}

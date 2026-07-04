@@ -44,7 +44,18 @@ class Settings(BaseSettings):
     # How long a password-reset link stays valid, in minutes.
     password_reset_token_expire_minutes: int = 30
 
-    @field_validator("frontend_base_url")
+    # Google and LinkedIn OAuth login (optional - a provider's login button
+    # redirects to a clear error instead of crashing if its id/secret is unset).
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    linkedin_client_id: str | None = None
+    linkedin_client_secret: str | None = None
+    # Base URL the backend itself is reachable at - used to build the fixed
+    # redirect_uri sent to each OAuth provider (must exactly match what's
+    # registered in that provider's console).
+    backend_base_url: str = "http://localhost:5001"
+
+    @field_validator("frontend_base_url", "backend_base_url")
     @classmethod
     def _strip_trailing_slash(cls, v: str) -> str:
         return v.rstrip("/")
