@@ -170,7 +170,7 @@ def oauth_callback(
         return _finish(_oauth_error_redirect("Something went wrong signing you in. Please try again."))
 
     token = create_access_token(user.id)
-    redirect = RedirectResponse(settings.frontend_base_url, status_code=status.HTTP_302_FOUND)
+    redirect = RedirectResponse(f"{settings.frontend_base_url}/dashboard", status_code=status.HTTP_302_FOUND)
     _set_session_cookie(redirect, token)
     return _finish(redirect)
 
