@@ -17,6 +17,36 @@ interface StarterCandidate {
 
 const STARTER_COUNT = 4;
 
+// Pool for users with zero expenses
+const ONBOARDING_STARTERS = [
+  '🤔 What can you help me with?',
+  '➕ How do I log my first expense?',
+  '📊 What kind of insights will I get once I have more data?',
+  '🧾 Can you scan a bill for me instead of typing it in?',
+  '🗂️ What expense categories does Spendly support?',
+];
+
+// Pool for users with a few expenses (below FEW_EXPENSES_LIMIT)
+const FEW_EXPENSES_STARTERS = [
+  '📋 What do my expenses look like so far?',
+  '💡 What should I be tracking to get useful insights?',
+  '🏷️ Am I using the right expense categories?',
+  '📅 How should I set a monthly budget?',
+  '💰 How can I start saving more each month?',
+  '🤔 What financial habits should I build early on?',
+  '📊 When will I start seeing spending patterns?',
+  '➕ What types of expenses are most important to log?',
+];
+
+function shuffle<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 const STARTER_POOL: StarterCandidate[] = [
   { text: '📅 How does this month compare to last month?', isEligible: (d) => d.monthly_trend.filter((p) => p.total > 0).length >= 2 },
   { text: '🔍 Why did my spending change this month?', isEligible: (d) => d.monthly_trend.filter((p) => p.total > 0).length >= 2 },
@@ -31,12 +61,30 @@ const STARTER_POOL: StarterCandidate[] = [
 ];
 
 function pickRandomStarters(data: DashboardData): string[] {
-  const eligible = STARTER_POOL.filter((c) => c.isEligible(data)).map((c) => c.text);
-  for (let i = eligible.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  if (!data.has_transactions) {
+    return shuffle(ONBOARDING_STARTERS).slice(0, STARTER_COUNT);
   }
-  return eligible.slice(0, STARTER_COUNT);
+  if (data.recent_transactions.length < FEW_EXPENSES_LIMIT) {
+    return shuffle(FEW_EXPENSES_STARTERS).slice(0, STARTER_COUNT);
+  }
+  const eligible = STARTER_POOL.filter((c) => c.isEligible(data)).map((c) => c.text);
+  return shuffle(eligible).slice(0, STARTER_COUNT);
+}
+
+function chatStorageKey(userId: number) {
+  return `sage-chat-${userId}`;
+}
+
+function loadPersistedChat(userId: number | undefined): { messages: DisplayMessage[]; history: ChatMessage[] } {
+  if (!userId) return { messages: [], history: [] };
+  try {
+    const raw = sessionStorage.getItem(chatStorageKey(userId));
+    if (!raw) return { messages: [], history: [] };
+    const parsed = JSON.parse(raw);
+    return { messages: parsed.messages ?? [], history: parsed.history ?? [] };
+  } catch {
+    return { messages: [], history: [] };
+  }
 }
 
 function formatTime(d: Date) {
@@ -58,31 +106,79 @@ function renderMarkdown(text: string): string {
   return h;
 }
 
+// recent_transactions is capped at 5 server-side, so a length below that
+// unambiguously means the user has fewer than 5 expenses recorded, ever.
+const FEW_EXPENSES_LIMIT = 5;
+
+function getWelcome(data: DashboardData | null): { tag: string; body: React.ReactNode } {
+  if (data && !data.has_transactions) {
+    return {
+      tag: 'Getting started',
+      body: (
+        <>
+          Hi! I'm <strong>Sage</strong>, your AI finance assistant. You haven't logged any expenses yet —
+          add a few from the <strong>Add Expense</strong> page and I'll help you spot spending patterns,
+          compare months, and find ways to save.
+        </>
+      ),
+    };
+  }
+  if (data && data.recent_transactions.length < FEW_EXPENSES_LIMIT) {
+    return {
+      tag: 'Just getting started',
+      body: (
+        <>
+          Hi! I'm <strong>Sage</strong>, your AI finance assistant. You've started tracking your spending —
+          nice! Keep adding expenses and I'll be able to give you richer insights, like month-over-month
+          comparisons and category breakdowns.
+        </>
+      ),
+    };
+  }
+  return {
+    tag: 'Welcome',
+    body: (
+      <>
+        Hi! I'm <strong>Sage</strong>, your AI finance assistant. I have access to your spending data —
+        ask me anything about your expenses, where your money is going, or how to save more.
+      </>
+    ),
+  };
+}
+
 export function Suggestions() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<DisplayMessage[]>([]);
-  const [showStarters, setShowStarters] = useState(true);
+  const [messages, setMessages] = useState<DisplayMessage[]>(() => loadPersistedChat(user?.id).messages);
+  const [showStarters, setShowStarters] = useState(() => loadPersistedChat(user?.id).messages.length === 0);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const historyRef = useRef<ChatMessage[]>([]);
+  const historyRef = useRef<ChatMessage[]>(loadPersistedChat(user?.id).history);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [welcomeTime] = useState(() => formatTime(new Date()));
-  const [monthsWithData, setMonthsWithData] = useState<number | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [starters, setStarters] = useState<string[]>([]);
+
+  const monthsWithData = dashboardData ? dashboardData.monthly_trend.filter((p) => p.total > 0).length : null;
+  const welcome = getWelcome(dashboardData);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
   useEffect(() => {
+    if (!user) return;
+    sessionStorage.setItem(chatStorageKey(user.id), JSON.stringify({ messages, history: historyRef.current }));
+  }, [messages, user]);
+
+  useEffect(() => {
     api
       .get<DashboardData>('/dashboard')
       .then((data) => {
-        setMonthsWithData(data.monthly_trend.filter((point) => point.total > 0).length);
+        setDashboardData(data);
         setStarters(pickRandomStarters(data));
       })
-      .catch(() => setMonthsWithData(0));
+      .catch(() => setDashboardData(null));
   }, []);
 
   const send = async (message: string) => {
@@ -140,7 +236,12 @@ export function Suggestions() {
           <div className="sage-tb-sub">Your personal finance advisor · powered by Spendly</div>
         </div>
         <div className="sage-tb-pill">
-          📊 {monthsWithData === null ? 'Loading data…' : `${monthsWithData} month${monthsWithData === 1 ? '' : 's'} of data loaded`}
+          📊{' '}
+          {monthsWithData === null
+            ? 'Loading data…'
+            : monthsWithData === 0
+              ? 'No spending data yet'
+              : `${monthsWithData} month${monthsWithData === 1 ? '' : 's'} of data loaded`}
         </div>
       </div>
 
@@ -151,10 +252,9 @@ export function Suggestions() {
             <div className="msg-body">
               <span className="msg-sender">Sage</span>
               <div className="msg-bubble">
-                <span className="bubble-tag">Welcome</span>
+                <span className="bubble-tag">{welcome.tag}</span>
                 <br />
-                Hi! I'm <strong>Sage</strong>, your AI finance assistant. I have access to your spending data —
-                ask me anything about your expenses, where your money is going, or how to save more.
+                {welcome.body}
               </div>
               <span className="msg-time">{welcomeTime}</span>
             </div>

@@ -45,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       if (!(e instanceof ApiError)) throw e;
     }
+    if (user) sessionStorage.removeItem(`sage-chat-${user.id}`);
     setUser(null);
   };
 

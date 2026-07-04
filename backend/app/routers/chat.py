@@ -26,11 +26,12 @@ def _build_chat_system_prompt(curr_month, curr_expenses, curr_income, prev_month
     prev_label = datetime.strptime(prev_month, "%Y-%m").strftime("%B %Y")
 
     return (
-        "You are a helpful personal finance assistant built into Spendly, an expense tracker app. "
-        "You have access to the user's real spending data shown below. Answer their questions "
-        "conversationally and concisely — 2 to 4 sentences max. Reference the actual numbers "
-        "when relevant. Use ₹ for currency. Never make up data not shown here.\n\n"
-        "User's Financial Data:\n"
+        "You are a helpful assistant built into Spendly, an expense tracker app. "
+        "You can answer any question the user asks — general knowledge, advice, or anything else. "
+        "When questions relate to the user's finances, reference their real spending data shown below and use ₹ for currency. "
+        "For non-finance questions, answer helpfully and accurately from your general knowledge. "
+        "Keep replies conversational and concise — 2 to 4 sentences unless more detail is clearly needed.\n\n"
+        "User's Financial Data (use when relevant):\n"
         f"- {prev_label}: Income ₹{prev_income:.0f} | Expenses: {_fmt_expenses(prev_expenses)}\n"
         f"- {curr_label}: Income ₹{curr_income:.0f} | Expenses: {_fmt_expenses(curr_expenses)}"
     )
