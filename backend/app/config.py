@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     google_client_secret: str | None = None
     linkedin_client_id: str | None = None
     linkedin_client_secret: str | None = None
+    microsoft_client_id: str | None = None
+    microsoft_client_secret: str | None = None
     # Base URL the backend itself is reachable at - used to build the fixed
     # redirect_uri sent to each OAuth provider (must exactly match what's
     # registered in that provider's console).

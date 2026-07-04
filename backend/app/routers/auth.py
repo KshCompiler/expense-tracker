@@ -25,7 +25,7 @@ from app.security import (
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
 
-OAUTH_PROVIDERS = {"google", "linkedin"}
+OAUTH_PROVIDERS = {"google", "linkedin", "microsoft"}
 
 # Kept as the exact string ResetPassword.tsx matches on to show its "VOID"
 # stamp state instead of a generic error banner - if this message changes,

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { getOAuthUrl } from '../api/client';
 
-type ProviderId = 'google';
+type ProviderId = 'google' | 'microsoft';
 
 interface ProviderDef {
   id: ProviderId;
@@ -24,13 +24,26 @@ const PROVIDERS: ProviderDef[] = [
       </svg>
     ),
   },
+  {
+    id: 'microsoft',
+    label: 'Continue with Microsoft',
+    rowClass: 'oauth-row--microsoft',
+    seal: (
+      <svg viewBox="0 0 21 21" aria-hidden="true">
+        <rect x="0" y="0" width="10" height="10" fill="#F25022" />
+        <rect x="11" y="0" width="10" height="10" fill="#7FBA00" />
+        <rect x="0" y="11" width="10" height="10" fill="#00A4EF" />
+        <rect x="11" y="11" width="10" height="10" fill="#FFB900" />
+      </svg>
+    ),
+  },
 ];
 
 export function OAuthButtons() {
   return (
     <div className="oauth-buttons">
       <div className="auth-divider">
-        <span>Or continue with</span>
+        <span>Or</span>
       </div>
       {PROVIDERS.map((provider) => (
         <a key={provider.id} href={getOAuthUrl(provider.id)} className={`oauth-row ${provider.rowClass}`}>

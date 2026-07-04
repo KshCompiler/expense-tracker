@@ -88,7 +88,7 @@ export function Register() {
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   className="form-input"
-                  placeholder="Min. 8 characters"
+                  placeholder="Enter password"
                   required
                   value={password}
                   onChange={(e) => {
@@ -129,7 +129,7 @@ export function Register() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   id="confirm_password"
                   className="form-input"
-                  placeholder="Confirm your password"
+                  placeholder="Confirm password"
                   required
                   value={confirmPassword}
                   onChange={(e) => {

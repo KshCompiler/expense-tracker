@@ -47,8 +47,17 @@ def _config(provider: str) -> _ProviderConfig:
             client_id=settings.linkedin_client_id,
             client_secret=settings.linkedin_client_secret,
         )
-    # Unreachable in practice - callers validate against the {"google", "linkedin"}
-    # allowlist before ever calling into this module.
+    if provider == "microsoft":
+        return _ProviderConfig(
+            authorize_url="https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+            token_url="https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            userinfo_url="https://graph.microsoft.com/oidc/userinfo",
+            scope="openid email profile",
+            client_id=settings.microsoft_client_id,
+            client_secret=settings.microsoft_client_secret,
+        )
+    # Unreachable in practice - callers validate against the provider allowlist
+    # before ever calling into this module.
     raise ValueError(f"Unsupported provider: {provider}")
 
 
