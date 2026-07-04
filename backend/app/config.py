@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 
 # Reuse the same SQLite file the original Flask app used, at the repo root
 # (backend/app/config.py -> parents[2] is the repo root).
@@ -28,6 +28,26 @@ class Settings(BaseSettings):
     # attaches the cookie to cross-site API calls - which requires cookie_secure
     # to also be true, since browsers drop SameSite=None cookies without Secure.
     cookie_samesite: str = "strict"
+
+    # SMTP settings for sending password-reset emails (Forgot Password feature).
+    # If smtp_host is left unset, forgot-password requests still return the
+    # generic success message, but no email is actually sent.
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str | None = None
+    smtp_use_tls: bool = True
+    # Base URL of the deployed frontend, used to build the password-reset link
+    # emailed to users.
+    frontend_base_url: str = "http://localhost:5173"
+    # How long a password-reset link stays valid, in minutes.
+    password_reset_token_expire_minutes: int = 30
+
+    @field_validator("frontend_base_url")
+    @classmethod
+    def _strip_trailing_slash(cls, v: str) -> str:
+        return v.rstrip("/")
 
     @property
     def database_url(self) -> str:

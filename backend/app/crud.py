@@ -27,6 +27,11 @@ def get_user_by_id(db: Session, user_id: int) -> User | None:
     return db.execute(select(User).where(User.id == user_id)).scalar_one_or_none()
 
 
+def update_user_password(db: Session, user: User, new_password_hash: str) -> None:
+    user.password_hash = new_password_hash
+    db.commit()
+
+
 def _month_date(now: datetime, months_ago: int, day: int) -> str:
     total = (now.year * 12 + (now.month - 1)) - months_ago
     year, month = divmod(total, 12)

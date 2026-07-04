@@ -71,6 +71,10 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface MessageResponse {
+  message: string;
+}
+
 export const VALID_CATEGORIES = [
   'Food',
   'Transport',
