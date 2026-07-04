@@ -835,6 +835,150 @@ a { color: inherit; text-decoration: none; }
     text-decoration: underline;
 }
 
+/* ------------------------------------------------------------------ */
+/* OAuth login rows (Google / LinkedIn) - each row uses that provider's */
+/* own official brand colors/marks (not Spendly's palette) so they read */
+/* as instantly recognizable "Sign in with X" buttons. Hex values below */
+/* are fixed by Google's/LinkedIn's own brand guidelines, not part of   */
+/* Spendly's design system - a deliberate exception to the CSS-vars-only */
+/* rule elsewhere in this file.                                         */
+/* ------------------------------------------------------------------ */
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.5rem 0 1.25rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.auth-divider span {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    white-space: nowrap;
+}
+
+.oauth-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.oauth-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--paper-card);
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.oauth-row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.oauth-seal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
+    color: var(--ink);
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.oauth-seal svg {
+    width: 18px;
+    height: 18px;
+}
+
+.oauth-row-label {
+    flex: 1;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink);
+}
+
+.oauth-row-arrow {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--ink-faint);
+    transition: transform 0.15s ease;
+}
+
+.oauth-row:hover .oauth-row-arrow { transform: translateX(2px); }
+
+/* Google: white button, neutral grey border, real multi-color "G" mark -
+   matches Google's own "Sign in with Google" branding guidelines. */
+.oauth-row--google {
+    background: #ffffff;
+    border-color: #dadce0;
+}
+.oauth-row--google .oauth-seal {
+    background: #ffffff;
+    border-color: transparent;
+}
+.oauth-row--google .oauth-row-label { color: #3c4043; }
+.oauth-row--google .oauth-row-arrow { color: #5f6368; }
+.oauth-row--google:hover {
+    background: #f8f9fa;
+    border-color: #dadce0;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+/* LinkedIn: solid LinkedIn-blue button with the white "in" mark - matches
+   LinkedIn's own branded button style. */
+.oauth-row--linkedin {
+    background: #0a66c2;
+    border-color: #0a66c2;
+}
+.oauth-row--linkedin .oauth-seal {
+    background: transparent;
+    border-color: transparent;
+    color: #ffffff;
+}
+.oauth-row--linkedin .oauth-row-label { color: #ffffff; }
+.oauth-row--linkedin .oauth-row-arrow { color: rgba(255, 255, 255, 0.85); }
+.oauth-row--linkedin:hover {
+    background: #004182;
+    border-color: #004182;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .oauth-row,
+    .oauth-seal,
+    .oauth-row-arrow {
+        transition: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .oauth-row { padding: 0.6rem 0.85rem; }
+    .oauth-seal { width: 30px; height: 30px; }
+}
+
 /* Dispatch chit: the ForgotPassword success state - a perforated paper slip
    stamped and sent, standing in for the toast/spinner a generic form would use. */
 .dispatch-chit {

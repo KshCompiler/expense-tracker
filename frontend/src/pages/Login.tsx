@@ -1,17 +1,19 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { ApiError } from '../api/client';
+import { OAuthButtons } from '../components/OAuthButtons';
 
 export function Login() {
   const { login } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchParams.get('oauth_error'));
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -73,6 +75,7 @@ export function Login() {
               Sign in
             </button>
           </form>
+          <OAuthButtons />
         </div>
 
         <p className="auth-switch">

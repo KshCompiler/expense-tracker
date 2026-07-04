@@ -6,6 +6,7 @@ import { ApiError } from '../api/client';
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter';
 import { PasswordVisibilityToggle } from '../components/PasswordVisibilityToggle';
 import { generateStrongPassword } from '../utils/generatePassword';
+import { OAuthButtons } from '../components/OAuthButtons';
 
 export function Register() {
   const { register } = useAuth();
@@ -143,6 +144,7 @@ export function Register() {
               Create account
             </button>
           </form>
+          <OAuthButtons />
         </div>
 
         <p className="auth-switch">

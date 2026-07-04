@@ -3,8 +3,15 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Expense, Income, User
+from app.models import Expense, Income, OAuthAccount, User
 from app.security import hash_password
+
+
+class OAuthUnverifiedEmailError(Exception):
+    """Raised by get_or_create_oauth_user when the provider reports
+    email_verified=False and there's no existing (provider, sub) link to
+    fall back on. Refusing to create/link an account off an unverified
+    email is what prevents account takeover via a spoofed email claim."""
 
 
 # ------------------------------------------------------------------ #
@@ -30,6 +37,63 @@ def get_user_by_id(db: Session, user_id: int) -> User | None:
 def update_user_password(db: Session, user: User, new_password_hash: str) -> None:
     user.password_hash = new_password_hash
     db.commit()
+
+
+# ------------------------------------------------------------------ #
+# OAuth accounts                                                      #
+# ------------------------------------------------------------------ #
+
+def get_oauth_account(db: Session, provider: str, provider_user_id: str) -> OAuthAccount | None:
+    return db.execute(
+        select(OAuthAccount).where(
+            OAuthAccount.provider == provider,
+            OAuthAccount.provider_user_id == provider_user_id,
+        )
+    ).scalar_one_or_none()
+
+
+def link_oauth_account(db: Session, user_id: int, provider: str, provider_user_id: str) -> OAuthAccount:
+    account = OAuthAccount(user_id=user_id, provider=provider, provider_user_id=provider_user_id)
+    db.add(account)
+    db.commit()
+    db.refresh(account)
+    return account
+
+
+def create_oauth_user(db: Session, full_name: str, email: str, provider: str, provider_user_id: str) -> User:
+    user = User(full_name=full_name, email=email, password_hash=None)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    link_oauth_account(db, user.id, provider, provider_user_id)
+    return user
+
+
+def get_or_create_oauth_user(
+    db: Session,
+    provider: str,
+    provider_user_id: str,
+    email: str,
+    full_name: str,
+    email_verified: bool,
+) -> User:
+    # (1) Existing link for this exact (provider, sub) wins outright, regardless
+    # of email_verified on this call - the identity was already established.
+    existing_link = get_oauth_account(db, provider, provider_user_id)
+    if existing_link is not None:
+        return get_user_by_id(db, existing_link.user_id)
+
+    # (2) No existing link. Only trust the provider's email to resolve/create
+    # an account if the provider itself confirms it's verified.
+    if email_verified:
+        user = get_user_by_email(db, email)
+        if user is not None:
+            link_oauth_account(db, user.id, provider, provider_user_id)
+            return user
+        return create_oauth_user(db, full_name, email, provider, provider_user_id)
+
+    # (3) Unverified email and no existing (provider, sub) link - refuse.
+    raise OAuthUnverifiedEmailError(f"{provider} did not confirm email_verified for a new identity")
 
 
 def _month_date(now: datetime, months_ago: int, day: int) -> str:
