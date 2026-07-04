@@ -40,7 +40,7 @@ export function OAuthButtons() {
   return (
     <div className="oauth-buttons">
       <div className="auth-divider">
-        <span>Or verify with</span>
+        <span>Or continue with</span>
       </div>
       {PROVIDERS.map((provider) => (
         <a key={provider.id} href={getOAuthUrl(provider.id)} className={`oauth-row ${provider.rowClass}`}>

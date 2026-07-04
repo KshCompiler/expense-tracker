@@ -15,7 +15,7 @@ Spendly currently only supports email/password authentication. This feature adds
 * Divider caption text → `var(--ink-muted)`
 
 **Typography**
-* Divider caption ("OR VERIFY WITH") → `var(--font-body)`, uppercase, wide letter-spacing, small size — the same restrained ledger-caption treatment as the "LINK DISPATCHED" stamp text from the forgot-password flow, not a new decorative font
+* Divider caption ("OR CONTINUE WITH") → `var(--font-body)`, uppercase, wide letter-spacing, small size — the same restrained ledger-caption treatment as the "LINK DISPATCHED" stamp text from the forgot-password flow, not a new decorative font
 * Provider row label ("Continue with Google" / "Continue with LinkedIn") → `var(--font-body)`, medium weight
 * No `var(--font-display)` usage here — this is a utility control, not a heading
 
@@ -27,7 +27,7 @@ One sentence: below the existing password-login form, a single hairline "endorse
 ┌───────────────────────────────┐
 │      [   Sign in    ]          │
 │                                 │
-│   ┄┄┄┄┄  OR VERIFY WITH  ┄┄┄┄┄  │  ← hairline rule + small-caps caption
+│   ┄┄┄┄┄  OR CONTINUE WITH  ┄┄┄┄  │  ← hairline rule + small-caps caption
 │                                 │
 │  ┌───┐                         │
 │  │ G │  Continue with Google →│  ← white button, grey border, real multi-color G logo
