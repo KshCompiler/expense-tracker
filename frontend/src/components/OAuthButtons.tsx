@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { getOAuthUrl } from '../api/client';
 
 type ProviderId = 'google' | 'linkedin';
@@ -6,7 +7,7 @@ interface ProviderDef {
   id: ProviderId;
   label: string;
   rowClass: string;
-  seal: JSX.Element;
+  seal: ReactNode;
 }
 
 const PROVIDERS: ProviderDef[] = [
