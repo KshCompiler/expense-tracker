@@ -1,6 +1,14 @@
 import { PASSWORD_SPECIAL_CHARS } from '../utils/generatePassword';
 
-const specialCharRegex = new RegExp(`[${PASSWORD_SPECIAL_CHARS.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`);
+// Escape every character (not just regex metacharacters) before building the
+// character class. Escaping only ".*+?^${}()|[]\\" left the hyphen in
+// PASSWORD_SPECIAL_CHARS bare, and inside a char class an unescaped "-"
+// between two other chars is a range, not a literal - "...+-=..." was being
+// read as the range "+" through "=" (0x2B-0x3D), which happens to include
+// every digit (0x30-0x39). That silently made any digit count as a "special
+// character" here, even though the backend's Python re.escape()-based regex
+// never had this bug.
+const specialCharRegex = new RegExp(`[${PASSWORD_SPECIAL_CHARS.replace(/./g, '\\$&')}]`);
 
 export const passwordRules: { key: string; label: string; test: (pw: string) => boolean }[] = [
   { key: 'length', label: 'At least 8 characters', test: (pw) => pw.length >= 8 },
