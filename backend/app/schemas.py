@@ -110,6 +110,40 @@ class LoginRequest(BaseModel):
         return data
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: Email
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_required(cls, data):
+        if not isinstance(data, dict):
+            return data
+        if not data.get("email"):
+            raise ValueError("Email is required!")
+        return data
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: Password
+    confirm_password: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_required_and_match(cls, data):
+        if not isinstance(data, dict):
+            return data
+        if not data.get("token") or not data.get("password") or not data.get("confirm_password"):
+            raise ValueError("All fields are required!")
+        if data.get("password") != data.get("confirm_password"):
+            raise ValueError("Passwords do not match!")
+        return data
+
+
+class MessageOut(BaseModel):
+    message: str
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -65,6 +65,9 @@ export function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              <Link to="/forgot-password" className="auth-forgot-link">
+                Forgot password?
+              </Link>
             </div>
             <button type="submit" className="btn-submit" disabled={submitting}>
               Sign in
