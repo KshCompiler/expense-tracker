@@ -16,6 +16,14 @@ export const EXPENSE_CATEGORY_TILES: TileOption[] = [
   { value: 'Other', label: 'Other', icon: '📦', color: '#6b6b6b', tint: '#f0ede6' },
 ];
 
+export const OVERALL_BUDGET_TILE: TileOption = {
+  value: 'Overall',
+  label: 'Overall',
+  icon: '📔',
+  color: '#0f0f0f',
+  tint: '#eeebe4',
+};
+
 export const INCOME_SOURCE_TILES: TileOption[] = [
   { value: 'Salary', label: 'Salary', icon: '💼', color: '#1a472a', tint: '#e8f0eb' },
   { value: 'Freelance', label: 'Freelance', icon: '💻', color: '#5b7fa6', tint: '#e8eef5' },

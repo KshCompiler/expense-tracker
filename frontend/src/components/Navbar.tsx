@@ -48,6 +48,7 @@ export function Navbar() {
         {user ? (
           <div className="nav-links">
             <Link to="/dashboard">Dashboard</Link>
+            <Link to="/budgets">Budgets</Link>
             <div className="nav-avatar-wrap" ref={wrapRef}>
               <button
                 type="button"

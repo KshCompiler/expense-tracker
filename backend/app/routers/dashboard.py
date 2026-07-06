@@ -36,4 +36,5 @@ def get_dashboard(current_user: User = Depends(get_current_user), db: Session = 
         recent_transactions=recent_transactions,
         has_transactions=len(recent_transactions) > 0,
         monthly_trend=[MonthlyTrendPoint(**point) for point in monthly_trend],
+        budgets=crud.compute_budget_statuses(db, current_user.id),
     )

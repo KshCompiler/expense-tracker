@@ -16,6 +16,7 @@ import { EditExpense } from './pages/EditExpense';
 import { ViewTransactions } from './pages/ViewTransactions';
 import { Profile } from './pages/Profile';
 import { Suggestions } from './pages/Suggestions';
+import { Budgets } from './pages/Budgets';
 
 function App() {
   return (
@@ -67,6 +68,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ViewTransactions />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/budgets"
+                element={
+                  <ProtectedRoute>
+                    <Budgets />
                   </ProtectedRoute>
                 }
               />

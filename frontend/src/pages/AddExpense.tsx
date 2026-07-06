@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { CategoryTilePicker } from '../components/CategoryTilePicker';
 import { BillUploadDropzone } from '../components/BillUploadDropzone';
 import { EXPENSE_CATEGORY_TILES } from '../components/categoryTiles';
-import type { BillExtraction } from '../types';
+import type { BillExtraction, BudgetStatus } from '../types';
 
 export function AddExpense() {
   const navigate = useNavigate();
@@ -16,6 +16,27 @@ export function AddExpense() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const checkBudgetThreshold = async (submittedCategory: string) => {
+    try {
+      const statuses = await api.get<BudgetStatus[]>('/budgets');
+      const match = statuses.find((b) => b.category === submittedCategory);
+      if (!match) return;
+      if (match.status === 'over') {
+        showToast(
+          `You're ₹${Math.abs(match.remaining).toFixed(0)} over your ${submittedCategory} budget this month.`,
+          'error'
+        );
+      } else if (match.status === 'warning') {
+        showToast(
+          `You've used ${match.percent_used.toFixed(0)}% of your ${submittedCategory} budget this month.`,
+          'warning'
+        );
+      }
+    } catch {
+      // Best-effort only — never let this fail the already-successful expense save.
+    }
+  };
 
   const handleExtracted = (data: BillExtraction) => {
     if (data.amount != null) setAmount(String(data.amount));
@@ -39,6 +60,7 @@ export function AddExpense() {
     try {
       await api.post('/expenses', { amount, category, date, description: description || null });
       showToast('Expense added successfully!', 'success');
+      await checkBudgetThreshold(category);
       navigate('/dashboard');
     } catch (err) {
       showToast(err instanceof ApiError ? err.message : 'An error occurred while adding the expense. Please try again.', 'error');

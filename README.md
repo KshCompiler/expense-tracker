@@ -6,6 +6,7 @@ A FastAPI + React expense tracker with AI-assisted bill scanning and spending in
 
 - **Expense & income tracking** — add, edit, and delete expenses and income entries with categorized tiles (Food, Transport, Bills, Health, Entertainment, Shopping, Other for expenses; Salary, Freelance, Business, Investment, Gift, Other for income)
 - **Dashboard** — monthly totals, category breakdowns, and a spending trend chart
+- **Budget management** — set monthly spending limits per category (or an overall limit), with live on-track/warning/over status and threshold alerts as expenses are logged; an AI-suggested starting limit (based on the user's own recent spending trend, with one-off spikes like a large one-time purchase excluded) can pre-fill the form
 - **Transaction history** — search, filter, and paginate past transactions
 - **AI bill scanning (OCR)** — upload a photo of a receipt and have a vision model pre-fill the expense/income form; every extracted field is re-validated server-side before it can be saved
 - **AI chat suggestions** — context-aware spending questions and answers powered by Groq
@@ -76,13 +77,13 @@ expense-tracker/
 │       ├── security.py       # Password hashing + JWT cookie auth
 │       ├── crud.py           # All DB access
 │       ├── validation.py     # Shared expense/income field validation
-│       └── routers/          # auth, dashboard, expenses, income, transactions, ocr, profile, chat
+│       └── routers/          # auth, dashboard, expenses, income, budgets, transactions, ocr, profile, chat
 ├── frontend/
 │   └── src/
 │       ├── api/client.ts     # Central fetch wrapper
 │       ├── context/          # AuthContext, ToastContext
-│       ├── components/       # Navbar, ProtectedRoute, CategoryTilePicker, BillUploadDropzone, TrendChart, ...
-│       └── pages/             # One component per route
+│       ├── components/       # Navbar, ProtectedRoute, CategoryTilePicker, BudgetStubGauge, BudgetForm, BillUploadDropzone, TrendChart, ...
+│       └── pages/             # One component per route (Dashboard, Budgets, AddExpense, ...)
 ├── expense_tracker.db        # SQLite database (generated on first run)
 └── .env                       # GROQ_API_KEY, SECRET_KEY, etc. (gitignored)
 ```

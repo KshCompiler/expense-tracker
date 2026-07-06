@@ -2119,3 +2119,163 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 600px) {
     .ai-showcase { padding: 3rem 1rem; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Budget stub gauge (shared by Dashboard's budget widget and Budgets)  */
+/* A bottom-up ink-fill ledger stub, not a horizontal progress bar -    */
+/* the perforated top edge reuses .dispatch-chit's punch-hole pattern,  */
+/* and the over-budget stamp reuses .stamp-badge's ink-seal treatment.  */
+/* ------------------------------------------------------------------ */
+
+.budget-stub {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.budget-stub--md { width: 42px; }
+.budget-stub--sm { width: 26px; }
+
+.budget-stub-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.budget-stub--sm .budget-stub-dot { width: 6px; height: 6px; }
+
+.budget-stub-track {
+    position: relative;
+    width: 100%;
+    height: 104px;
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm) var(--radius-sm) 3px 3px;
+    overflow: hidden;
+}
+
+.budget-stub--sm .budget-stub-track { height: 60px; }
+
+.budget-stub-track::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 7px;
+    background-image: radial-gradient(circle at center, var(--paper-card) 3px, transparent 3.5px);
+    background-size: 9px 7px;
+    background-repeat: repeat-x;
+    background-position: center top;
+    z-index: 2;
+}
+
+.budget-stub-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    min-height: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .budget-stub-fill { transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+}
+
+.budget-stub-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.budget-stub-fill--ok { background: var(--accent); }
+.budget-stub-fill--warning { background: var(--accent-2); }
+.budget-stub-fill--over { background: var(--danger); }
+
+.budget-stamp-over {
+    position: absolute;
+    top: -10px;
+    right: -18px;
+    padding: 0.15rem 0.4rem;
+    border: 2px solid var(--danger);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--danger);
+    background: var(--paper-card);
+    transform: rotate(-8deg);
+    mix-blend-mode: multiply;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 3;
+    animation: stamp-thump 220ms ease-out;
+}
+
+.budget-stub--sm .budget-stamp-over {
+    top: -8px;
+    right: -12px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.5rem;
+    border-width: 1.5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .budget-stamp-over { animation: none; }
+}
+
+/* Budget form (add/edit) */
+
+.budget-form-locked-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--paper-warm);
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+.budget-form-limit-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+}
+
+.budget-form-limit-header label { margin-bottom: 0; }
+
+.budget-suggest-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--accent-2);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.budget-suggest-btn:hover:not(:disabled) { text-decoration: underline; }
+.budget-suggest-btn:disabled { color: var(--ink-faint); cursor: default; }
+
+.budget-suggest-rationale {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    font-style: italic;
+}
+

@@ -3,7 +3,20 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import type { DashboardData } from '../types';
 import { TrendChart } from '../components/TrendChart';
+import { BudgetStubGauge } from '../components/BudgetStubGauge';
+import { EXPENSE_CATEGORY_TILES, OVERALL_BUDGET_TILE } from '../components/categoryTiles';
 import './Dashboard.css';
+
+const ALL_BUDGET_TILES = [...EXPENSE_CATEGORY_TILES, OVERALL_BUDGET_TILE];
+
+function budgetTileColor(category: string): string {
+  return ALL_BUDGET_TILES.find((t) => t.value === category)?.color ?? '#6b6b6b';
+}
+
+function budgetMiniCaption(status: DashboardData['budgets'][number]): string {
+  if (status.status === 'over') return `₹${Math.abs(status.remaining).toFixed(0)} over`;
+  return `${status.percent_used.toFixed(0)}% used`;
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   Food: '#c17f24',
@@ -197,6 +210,31 @@ export function Dashboard() {
         </div>
         <TrendChart data={trend} />
       </div>
+
+      {data.budgets.length > 0 && (
+        <div className="db-budgets-card">
+          <div className="db-chart-header">
+            <span className="db-section-title">Budgets this month</span>
+            <Link to="/budgets" style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 500 }}>
+              View all →
+            </Link>
+          </div>
+          <div className="db-budgets-row">
+            {data.budgets.map((budget) => (
+              <div className="db-budget-mini" key={budget.id}>
+                <BudgetStubGauge
+                  percentUsed={budget.percent_used}
+                  status={budget.status}
+                  color={budgetTileColor(budget.category)}
+                  size="sm"
+                />
+                <span className="db-budget-mini-name">{budget.category}</span>
+                <span className="db-budget-mini-caption">{budgetMiniCaption(budget)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="ai-fab-wrap">
         <div className="ai-fab-tooltip">

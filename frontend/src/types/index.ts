@@ -25,6 +25,32 @@ export interface MonthlyTrendPoint {
   total: number;
 }
 
+export type BudgetHealthStatus = 'ok' | 'warning' | 'over';
+
+export interface Budget {
+  id: number;
+  user_id: number;
+  category: string;
+  monthly_limit: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetStatus {
+  id: number;
+  category: string;
+  monthly_limit: number;
+  spent: number;
+  percent_used: number;
+  remaining: number;
+  status: BudgetHealthStatus;
+}
+
+export interface BudgetSuggestion {
+  suggested_limit: number;
+  rationale: string;
+}
+
 export interface DashboardData {
   user: User;
   today_date: string;
@@ -37,6 +63,7 @@ export interface DashboardData {
   recent_transactions: Expense[];
   has_transactions: boolean;
   monthly_trend: MonthlyTrendPoint[];
+  budgets: BudgetStatus[];
 }
 
 export interface TransactionsPage {
