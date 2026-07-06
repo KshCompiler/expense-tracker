@@ -2,32 +2,69 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 2.5rem 2rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-.budgets-header {
+/* ── Passbook folio: terracotta cover + sealed summary strip ──
+   Mirrors the Dashboard's green folio so both pages read as the same
+   book, while terracotta gives this one its own identity: green = the
+   overview page, terracotta = the limits page. */
+.bl-folio {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.bl-cover {
+    background: linear-gradient(135deg, #f8dcae 0%, #eaa646 100%);
+    padding: 1.75rem 2rem 2.25rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1.75rem;
     gap: 1rem;
+    position: relative;
+    overflow: hidden;
 }
 
-.budgets-title {
+.bl-cover::before {
+    content: '◈';
+    position: absolute;
+    right: -0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 9rem;
+    color: rgba(0,0,0,0.05);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+}
+
+.bl-cover-text h1 {
     font-family: var(--font-display);
-    font-size: 1.75rem;
+    font-size: 1.85rem;
     color: var(--ink);
+    margin-bottom: 0.25rem;
 }
 
-.budgets-add-btn {
+.bl-cover-text p {
+    font-size: 0.875rem;
+    color: var(--ink-soft);
+    max-width: 340px;
+}
+
+.bl-add-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    min-width: 180px;
+    min-width: 160px;
     background: var(--ink);
     color: var(--paper);
     border: none;
-    padding: 0.6rem 1.75rem;
+    padding: 0.6rem 1.5rem;
     border-radius: var(--radius-sm);
     font-family: var(--font-body);
     font-size: 0.875rem;
@@ -37,36 +74,108 @@
     letter-spacing: 0.01em;
     box-shadow: 0 2px 6px rgba(0,0,0,0.13);
     transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+    flex-shrink: 0;
 }
 
-.budgets-add-btn:hover {
-    background: var(--accent);
+.bl-add-btn:hover {
+    background: var(--accent-2);
+    color: #fff;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.16);
 }
 
-.budget-card {
+.bl-seam {
+    position: relative;
+    height: 0;
+}
+
+.bl-seal {
+    position: absolute;
+    top: -17px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-2);
+    font-size: 0.95rem;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    z-index: 2;
+}
+
+.bl-summary {
+    background: var(--paper-card);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 1.75rem 2rem 1.5rem;
+}
+
+.bl-summary-col {
+    padding: 0 1.5rem;
+    border-right: 1px solid var(--border-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.bl-summary-col:first-child { padding-left: 0; }
+.bl-summary-col:last-child { border-right: none; padding-right: 0; }
+
+.bl-summary-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-muted);
+}
+
+.bl-summary-value {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    color: var(--ink);
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+
+.bl-summary-value.pos { color: var(--accent); }
+.bl-summary-value.neg { color: var(--danger); }
+
+/* ── Ledger sheet: one continuous ruled sheet, not a stack of boxes ── */
+.bl-sheet {
     background: var(--paper-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    margin-bottom: 1rem;
-    padding: 1.5rem;
+    padding: 0.5rem 1.5rem;
 }
 
-.budget-card--form { padding: 1.75rem; }
-
-.budget-row {
+.bl-line {
     display: flex;
     align-items: center;
     gap: 1.25rem;
+    padding: 1.25rem 0.5rem;
+    margin: 0 -0.5rem;
+    border-bottom: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
 }
 
-.budget-row--over {
-    background: var(--danger-light);
-    border-color: #f0c9c4;
+.bl-line:last-child { border-bottom: none; }
+.bl-line:hover { background: var(--paper-warm); }
+
+.bl-line--over { background: var(--danger-light); }
+.bl-line--over:hover { background: var(--danger-light); }
+
+.bl-line--form {
+    display: block;
+    padding: 1.5rem 0.5rem;
 }
 
-.budget-row-text {
+.bl-line-text {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -74,7 +183,7 @@
     min-width: 0;
 }
 
-.budget-row-name {
+.bl-line-name {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -84,30 +193,73 @@
     color: var(--ink);
 }
 
-.budget-row-icon { font-size: 1.05rem; }
+.bl-line-icon { font-size: 1.05rem; }
 
-.budget-row-figures {
+.bl-line-figures {
     font-size: 0.85rem;
     color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
 }
 
-.budget-row-actions {
+.bl-line-actions {
     display: flex;
     align-items: center;
     gap: 0.25rem;
     flex-shrink: 0;
+    opacity: 0.45;
+    transition: opacity 0.15s;
+}
+
+.bl-line:hover .bl-line-actions,
+.bl-line-actions:focus-within {
+    opacity: 1;
+}
+
+.bl-add-line {
+    display: block;
+    width: calc(100% + 3rem);
+    margin: 0 -1.5rem;
+    padding: 0.9rem 1.5rem;
+    border: none;
+    border-top: 1px dashed var(--border);
+    background: none;
+    color: var(--ink-muted);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.bl-add-line:hover {
+    background: var(--paper-warm);
+    color: var(--accent);
 }
 
 @media (max-width: 640px) {
     .budgets-wrap { padding: 1.25rem 1rem 3rem; }
-    .budgets-header { flex-direction: column; align-items: flex-start; }
-    .budget-row { flex-wrap: wrap; }
-    .budget-row-text { flex-basis: 100%; order: 3; }
-    .budget-row-actions { margin-left: auto; }
+    .bl-cover { flex-direction: column; align-items: flex-start; padding: 1.25rem 1.25rem 2rem; }
+    .bl-add-btn { width: 100%; }
+
+    .bl-summary {
+        grid-template-columns: repeat(2, 1fr);
+        row-gap: 1.25rem;
+        padding: 1.25rem 1.25rem 0.75rem;
+    }
+
+    .bl-summary-col { border-right: none; padding: 0 0.9rem 0.85rem; }
+    .bl-summary-col:nth-child(odd) { border-right: 1px solid var(--border-soft); padding-left: 0; }
+    .bl-summary-col:nth-child(even) { padding-right: 0; }
+
+    .bl-line { flex-wrap: wrap; }
+    .bl-line-text { flex-basis: 100%; order: 3; }
+    .bl-line-actions { margin-left: auto; opacity: 1; }
 }
 
 @media (max-width: 480px) {
     .budgets-wrap { padding: 1rem 0.875rem 3rem; }
-    .budgets-title { font-size: 1.4rem; }
-    .budget-card { padding: 1.1rem; }
+    .bl-cover-text h1 { font-size: 1.4rem; }
+    .bl-sheet { padding: 0.5rem 1.1rem; }
+    .bl-add-line { width: calc(100% + 2.2rem); margin: 0 -1.1rem; padding: 0.9rem 1.1rem; }
 }

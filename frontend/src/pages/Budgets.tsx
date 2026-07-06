@@ -59,75 +59,124 @@ export function Budgets() {
   if (!budgets) return null;
 
   const usedCategories = budgets.map((b) => b.category);
+  const totalBudgeted = budgets.reduce((sum, b) => sum + b.monthly_limit, 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+  const totalRemaining = totalBudgeted - totalSpent;
+  const overCount = budgets.filter((b) => b.status === 'over').length;
 
   return (
     <div className="budgets-wrap">
-      <div className="budgets-header">
-        <h1 className="budgets-title">Set Monthly Budgets</h1>
-        {!adding && (
-          <button type="button" className="budgets-add-btn" onClick={() => setAdding(true)}>
-            + Add Budget
-          </button>
+      <div className="bl-folio">
+        <div className="bl-cover">
+          <div className="bl-cover-text">
+            <h1>Monthly Budgets</h1>
+            <p>Your limits, tracked live against what you've actually spent.</p>
+          </div>
+          {!adding && (
+            <button type="button" className="bl-add-btn" onClick={() => setAdding(true)}>
+              + Add Budget
+            </button>
+          )}
+        </div>
+
+        {budgets.length > 0 && (
+          <>
+            <div className="bl-seam">
+              <span className="bl-seal" aria-hidden="true">
+                ◈
+              </span>
+            </div>
+
+            <div className="bl-summary">
+              <div className="bl-summary-col">
+                <span className="bl-summary-label">Budgeted</span>
+                <span className="bl-summary-value">₹{totalBudgeted.toFixed(0)}</span>
+              </div>
+              <div className="bl-summary-col">
+                <span className="bl-summary-label">Spent</span>
+                <span className="bl-summary-value">₹{totalSpent.toFixed(0)}</span>
+              </div>
+              <div className="bl-summary-col">
+                <span className="bl-summary-label">Remaining</span>
+                <span className={`bl-summary-value ${totalRemaining < 0 ? 'neg' : 'pos'}`}>
+                  ₹{totalRemaining.toFixed(0)}
+                </span>
+              </div>
+              <div className="bl-summary-col">
+                <span className="bl-summary-label">Over Budget</span>
+                <span className={`bl-summary-value ${overCount > 0 ? 'neg' : ''}`}>{overCount}</span>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
-      {adding && (
-        <div className="budget-card budget-card--form">
-          <BudgetForm mode="create" excludedCategories={usedCategories} onSaved={handleSaved} onCancel={closeForms} />
-        </div>
-      )}
+      <div className="bl-sheet">
+        {adding && (
+          <div className="bl-line bl-line--form">
+            <BudgetForm mode="create" excludedCategories={usedCategories} onSaved={handleSaved} onCancel={closeForms} />
+          </div>
+        )}
 
-      {budgets.length === 0 && !adding ? (
-        <div className="budget-card">
+        {budgets.length === 0 && !adding ? (
           <div className="empty-state">
             <span className="empty-icon">📔</span>
-            <p>No budgets set — add one to start tracking a limit.</p>
+            <p>This ledger page is blank — write in your first budget to start tracking a limit.</p>
             <button type="button" className="btn-primary" onClick={() => setAdding(true)}>
               + Add Budget
             </button>
           </div>
-        </div>
-      ) : (
-        budgets.map((budget) => {
-          const tile = tileFor(budget.category);
-          return (
-            <div key={budget.id} className={`budget-card budget-row ${budget.status === 'over' ? 'budget-row--over' : ''}`}>
-              {editingId === budget.id ? (
-                <BudgetForm
-                  mode="edit"
-                  budgetId={budget.id}
-                  initialCategory={budget.category}
-                  initialLimit={budget.monthly_limit}
-                  excludedCategories={usedCategories.filter((c) => c !== budget.category)}
-                  onSaved={handleSaved}
-                  onCancel={closeForms}
-                />
-              ) : (
-                <>
-                  <BudgetStubGauge percentUsed={budget.percent_used} status={budget.status} color={tile?.color ?? '#6b6b6b'} />
-                  <div className="budget-row-text">
-                    <span className="budget-row-name">
-                      <span className="budget-row-icon">{tile?.icon}</span>
-                      {budget.category}
-                    </span>
-                    <span className="budget-row-figures">
-                      ₹{budget.spent.toFixed(0)} of ₹{budget.monthly_limit.toFixed(0)} · {statusCaption(budget)}
-                    </span>
-                  </div>
-                  <div className="budget-row-actions">
-                    <button type="button" className="action-link" onClick={() => setEditingId(budget.id)}>
-                      Edit
-                    </button>
-                    <button type="button" className="delete-btn" onClick={() => handleDelete(budget.id)}>
-                      Delete
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })
-      )}
+        ) : (
+          budgets.map((budget) => {
+            const tile = tileFor(budget.category);
+            return (
+              <div
+                key={budget.id}
+                className={`bl-line ${budget.status === 'over' ? 'bl-line--over' : ''}`}
+              >
+                {editingId === budget.id ? (
+                  <BudgetForm
+                    mode="edit"
+                    budgetId={budget.id}
+                    initialCategory={budget.category}
+                    initialLimit={budget.monthly_limit}
+                    excludedCategories={usedCategories.filter((c) => c !== budget.category)}
+                    onSaved={handleSaved}
+                    onCancel={closeForms}
+                  />
+                ) : (
+                  <>
+                    <BudgetStubGauge percentUsed={budget.percent_used} status={budget.status} color={tile?.color ?? '#6b6b6b'} />
+                    <div className="bl-line-text">
+                      <span className="bl-line-name">
+                        <span className="bl-line-icon">{tile?.icon}</span>
+                        {budget.category}
+                      </span>
+                      <span className="bl-line-figures">
+                        ₹{budget.spent.toFixed(0)} of ₹{budget.monthly_limit.toFixed(0)} · {statusCaption(budget)}
+                      </span>
+                    </div>
+                    <div className="bl-line-actions">
+                      <button type="button" className="action-link" onClick={() => setEditingId(budget.id)}>
+                        Edit
+                      </button>
+                      <button type="button" className="delete-btn" onClick={() => handleDelete(budget.id)}>
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })
+        )}
+
+        {budgets.length > 0 && !adding && (
+          <button type="button" className="bl-add-line" onClick={() => setAdding(true)}>
+            + Write a new line
+          </button>
+        )}
+      </div>
     </div>
   );
 }

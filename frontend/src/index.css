@@ -2135,7 +2135,7 @@ a { color: inherit; text-decoration: none; }
     gap: 0.45rem;
 }
 
-.budget-stub--md { width: 42px; }
+.budget-stub--md { width: 56px; }
 .budget-stub--sm { width: 26px; }
 
 .budget-stub-dot {
@@ -2150,7 +2150,7 @@ a { color: inherit; text-decoration: none; }
 .budget-stub-track {
     position: relative;
     width: 100%;
-    height: 104px;
+    height: 136px;
     background: var(--paper-warm);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm) var(--radius-sm) 3px 3px;
