@@ -53,3 +53,19 @@ class Income(Base):
     date: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[str] = mapped_column(String, server_default=text("(datetime('now'))"))
+
+
+class Budget(Base):
+    __tablename__ = "budgets"
+    __table_args__ = (
+        UniqueConstraint("user_id", "category", name="uq_budgets_user_category"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    # One of VALID_CATEGORIES, or the literal "Overall" for a whole-month cap
+    # across every category rather than one.
+    category: Mapped[str] = mapped_column(String, nullable=False)
+    monthly_limit: Mapped[float] = mapped_column(Float, nullable=False)
+    created_at: Mapped[str] = mapped_column(String, server_default=text("(datetime('now'))"))
+    updated_at: Mapped[str] = mapped_column(String, server_default=text("(datetime('now'))"))

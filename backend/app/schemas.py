@@ -1,9 +1,10 @@
 from datetime import date as date_type, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, model_validator
 
 from app.constants import (
+    BUDGET_CATEGORIES,
     EMAIL_REGEX,
     PASSWORD_DIGIT_REGEX,
     PASSWORD_MIN_LENGTH,
@@ -69,12 +70,19 @@ def _check_income_source(v: str) -> str:
     return v
 
 
+def _check_budget_category(v: str) -> str:
+    if v not in BUDGET_CATEGORIES:
+        raise ValueError("Please select a valid category!")
+    return v
+
+
 Email = Annotated[str, AfterValidator(_check_email)]
 Password = Annotated[str, AfterValidator(_check_password_strength)]
 PositiveAmount = Annotated[float, BeforeValidator(_parse_amount), AfterValidator(_check_positive_amount)]
 FormDate = Annotated[date_type, BeforeValidator(_parse_form_date)]
 Category = Annotated[str, AfterValidator(_check_category)]
 IncomeSource = Annotated[str, AfterValidator(_check_income_source)]
+BudgetCategory = Annotated[str, AfterValidator(_check_budget_category)]
 
 
 class RegisterRequest(BaseModel):
@@ -229,6 +237,59 @@ class MonthlyTrendPoint(BaseModel):
     total: float
 
 
+class BudgetIn(BaseModel):
+    category: BudgetCategory
+    monthly_limit: PositiveAmount
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_required(cls, data):
+        if not isinstance(data, dict):
+            return data
+        if not data.get("category") or not data.get("monthly_limit"):
+            raise ValueError("Category and monthly limit are required!")
+        return data
+
+
+class BudgetUpdateIn(BaseModel):
+    monthly_limit: PositiveAmount
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_required(cls, data):
+        if not isinstance(data, dict):
+            return data
+        if not data.get("monthly_limit"):
+            raise ValueError("Monthly limit is required!")
+        return data
+
+
+class BudgetOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    category: str
+    monthly_limit: float
+    created_at: str
+    updated_at: str
+
+
+class BudgetStatus(BaseModel):
+    id: int
+    category: str
+    monthly_limit: float
+    spent: float
+    percent_used: float
+    remaining: float
+    status: Literal["ok", "warning", "over"]
+
+
+class BudgetSuggestionOut(BaseModel):
+    suggested_limit: float
+    rationale: str
+
+
 class DashboardOut(BaseModel):
     user: UserOut
     today_date: str
@@ -241,6 +302,7 @@ class DashboardOut(BaseModel):
     recent_transactions: list[ExpenseOut]
     has_transactions: bool
     monthly_trend: list[MonthlyTrendPoint]
+    budgets: list[BudgetStatus]
 
 
 class TransactionsPage(BaseModel):

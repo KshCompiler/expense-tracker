@@ -3,7 +3,9 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Expense, Income, OAuthAccount, User
+from app.constants import BUDGET_WARNING_THRESHOLD
+from app.models import Budget, Expense, Income, OAuthAccount, User
+from app.schemas import BudgetStatus
 from app.security import hash_password
 
 
@@ -343,3 +345,102 @@ def get_user_lifetime_totals(db: Session, user_id: int) -> tuple[float, float, i
         select(func.count()).select_from(Expense).where(Expense.user_id == user_id)
     ).scalar_one()
     return float(total_expenses), float(total_income), int(transaction_count)
+
+
+# ------------------------------------------------------------------ #
+# Budgets                                                             #
+# ------------------------------------------------------------------ #
+
+def get_user_budgets(db: Session, user_id: int) -> list[Budget]:
+    stmt = select(Budget).where(Budget.user_id == user_id).order_by(Budget.category)
+    return list(db.execute(stmt).scalars().all())
+
+
+def get_budget_by_id(db: Session, budget_id: int) -> Budget | None:
+    return db.execute(select(Budget).where(Budget.id == budget_id)).scalar_one_or_none()
+
+
+def get_budget_by_category(db: Session, user_id: int, category: str) -> Budget | None:
+    return db.execute(
+        select(Budget).where(Budget.user_id == user_id, Budget.category == category)
+    ).scalar_one_or_none()
+
+
+def create_budget(db: Session, user_id: int, category: str, monthly_limit: float) -> Budget:
+    budget = Budget(user_id=user_id, category=category, monthly_limit=monthly_limit)
+    db.add(budget)
+    db.commit()
+    db.refresh(budget)
+    return budget
+
+
+def update_budget(db: Session, budget_id: int, monthly_limit: float) -> Budget:
+    budget = get_budget_by_id(db, budget_id)
+    budget.monthly_limit = monthly_limit
+    db.commit()
+    db.refresh(budget)
+    return budget
+
+
+def delete_budget(db: Session, budget_id: int) -> None:
+    budget = get_budget_by_id(db, budget_id)
+    if budget is not None:
+        db.delete(budget)
+        db.commit()
+
+
+def compute_budget_statuses(db: Session, user_id: int) -> list[BudgetStatus]:
+    budgets = get_user_budgets(db, user_id)
+    if not budgets:
+        return []
+
+    category_totals = dict(get_expenses_by_category(db, user_id))
+    overall_total: float | None = None
+    statuses = []
+    for budget in budgets:
+        if budget.category == "Overall":
+            if overall_total is None:
+                overall_total = sum(e.amount for e in get_user_expenses_this_month(db, user_id))
+            spent = overall_total
+        else:
+            spent = category_totals.get(budget.category, 0.0)
+
+        percent_used = (spent / budget.monthly_limit) * 100 if budget.monthly_limit else 0.0
+        if percent_used >= 100:
+            status = "over"
+        elif percent_used >= BUDGET_WARNING_THRESHOLD * 100:
+            status = "warning"
+        else:
+            status = "ok"
+
+        statuses.append(
+            BudgetStatus(
+                id=budget.id,
+                category=budget.category,
+                monthly_limit=budget.monthly_limit,
+                spent=spent,
+                percent_used=round(percent_used, 1),
+                remaining=round(budget.monthly_limit - spent, 2),
+                status=status,
+            )
+        )
+    return statuses
+
+
+def get_category_spend_history(db: Session, user_id: int, category: str, months: int = 3) -> list[float]:
+    now = datetime.now()
+    keys = []
+    for i in range(months - 1, -1, -1):
+        total_months = (now.year * 12 + (now.month - 1)) - i
+        year, month = divmod(total_months, 12)
+        month += 1
+        keys.append(f"{year:04d}-{month:02d}")
+
+    stmt = select(func.strftime("%Y-%m", Expense.date), func.sum(Expense.amount)).where(
+        Expense.user_id == user_id, Expense.date >= f"{keys[0]}-01"
+    )
+    if category != "Overall":
+        stmt = stmt.where(Expense.category == category)
+    stmt = stmt.group_by(func.strftime("%Y-%m", Expense.date))
+    totals_by_key = {ym: float(total) for ym, total in db.execute(stmt).all()}
+    return [totals_by_key.get(key, 0.0) for key in keys]

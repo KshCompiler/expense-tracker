@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.constants import MAX_REQUEST_BODY_BYTES
 from app.database import Base, SessionLocal, engine
-from app.routers import auth, chat, dashboard, expenses, income, ocr, profile, transactions
+from app.routers import auth, budgets, chat, dashboard, expenses, income, ocr, profile, transactions
 from app import crud
 
 VALUE_ERROR_PREFIX = "Value error, "
@@ -60,6 +60,7 @@ app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(expenses.router)
 app.include_router(income.router)
+app.include_router(budgets.router)
 app.include_router(transactions.router)
 app.include_router(ocr.router)
 app.include_router(profile.router)
